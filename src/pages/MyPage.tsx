@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { 
   LogOut, Edit, MapPin, Search, BarChart3, Star, 
@@ -11,6 +12,7 @@ import {
 
 const MyPage: React.FC = () => {
   const { currentUser, role, user, loading: userLoading, logout, updateProfile } = useUser();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -43,7 +45,7 @@ const MyPage: React.FC = () => {
 
   // Wait for loading to finish before checking user
   if (userLoading) {
-    return <div style={{ padding: '5rem', textAlign: 'center' }}>読み込み中...</div>;
+    return <div style={{ padding: '5rem', textAlign: 'center' }}>{t('mypage.loading')}</div>;
   }
 
   if (!user) {
@@ -77,7 +79,7 @@ const MyPage: React.FC = () => {
     setLoading(true);
     try {
       await updateProfile({
-        name: editData.full_name || '名前未設定',
+        name: editData.full_name || 'No Name',
         full_name: editData.full_name,
         bio: editData.bio,
         location: editData.location,
@@ -93,7 +95,7 @@ const MyPage: React.FC = () => {
       } as any);
       setIsEditing(false);
     } catch (error) {
-      alert('保存に失敗しました。');
+      alert(t('mypage.save_error'));
     } finally {
       setLoading(false);
     }
@@ -122,16 +124,16 @@ const MyPage: React.FC = () => {
         const currentList = currentUser?.[field] || [];
         await updateProfile({ [field]: [...currentList, publicUrl] } as any);
       }
-      alert('アップロードが完了しました！');
+      alert(t('mypage.upload_success'));
     } catch (error: any) {
-      alert('失敗: ' + error.message);
+      alert('Error: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   const deleteMedia = async (url: string, field: 'photos' | 'videos' | 'audios') => {
-    if (!window.confirm('削除してもよろしいですか？')) return;
+    if (!window.confirm(t('mypage.delete_confirm'))) return;
     const newList = (currentUser?.[field] || []).filter(item => item !== url);
     await updateProfile({ [field]: newList } as any);
   };
@@ -145,44 +147,27 @@ const MyPage: React.FC = () => {
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
       {/* Quick Access Dashboard */}
-      {isAgency && (
-        <div style={{ 
-          backgroundColor: 'rgba(212, 175, 55, 0.1)', 
-          border: '1px solid var(--accent)', 
-          borderRadius: 'var(--radius-md)', 
-          padding: '0.75rem 1rem', 
-          marginBottom: '1rem',
-          fontSize: '0.8125rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          color: 'var(--accent)'
-        }}>
-          <AlertTriangle size={16} />
-          <span>現在フリープランです。オファーは最大3通まで送信可能です。審査完了までお待ちください。</span>
-        </div>
-      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         <button 
           onClick={() => navigate(isTalent ? '/search/agencies' : '/search/talent')}
           style={quickLinkStyle}
         >
           <Search size={24} />
-          <span>{isTalent ? '事務所を探す' : '志望者を探す'}</span>
+          <span>{isTalent ? t('mypage.search_agency') : t('mypage.search_talent')}</span>
         </button>
         <button 
           onClick={() => navigate('/chat')}
           style={quickLinkStyle}
         >
           <MessageSquare size={24} />
-          <span>チャット＆オファー</span>
+          <span>{t('mypage.chat_offers')}</span>
         </button>
         <button 
           onClick={() => navigate('/favorites')}
           style={quickLinkStyle}
         >
           <Star size={24} />
-          <span>お気に入り</span>
+          <span>{t('mypage.favorites')}</span>
         </button>
         {isAgency && (
           <button 
@@ -190,7 +175,7 @@ const MyPage: React.FC = () => {
             style={{ ...quickLinkStyle, border: '1px solid var(--accent)', background: 'rgba(212, 175, 55, 0.1)' }}
           >
             <CreditCard size={24} color="var(--accent)" />
-            <span style={{ color: 'var(--accent)' }}>プラン管理</span>
+            <span style={{ color: 'var(--accent)' }}>{t('mypage.plan_mgmt')}</span>
           </button>
         )}
         {(user?.email === 'admin@dreambridge.jp' || user?.email?.includes('admin')) && (
@@ -199,7 +184,7 @@ const MyPage: React.FC = () => {
             style={{ ...quickLinkStyle, border: '1px solid #ef4444', background: 'rgba(239, 68, 68, 0.1)' }}
           >
             <Shield size={24} color="#ef4444" />
-            <span style={{ color: '#ef4444' }}>運営管理</span>
+            <span style={{ color: '#ef4444' }}>{t('mypage.admin')}</span>
           </button>
         )}
       </div>
@@ -225,18 +210,18 @@ const MyPage: React.FC = () => {
                 {isEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '500px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <input type="text" placeholder={isTalent ? "氏名" : "事務所名"} value={editData.full_name} onChange={e => setEditData({...editData, full_name: e.target.value})} style={inputStyle} />
-                      <input type="text" placeholder={isTalent ? "拠点（都道府県など）" : "所在地"} value={editData.location} onChange={e => setEditData({...editData, location: e.target.value})} style={inputStyle} />
+                      <input type="text" placeholder={isTalent ? "Full Name" : "Agency Name"} value={editData.full_name} onChange={e => setEditData({...editData, full_name: e.target.value})} style={inputStyle} />
+                      <input type="text" placeholder={isTalent ? "Location" : "Headquarters"} value={editData.location} onChange={e => setEditData({...editData, location: e.target.value})} style={inputStyle} />
                     </div>
                     {isTalent && (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                        <input type="number" placeholder="年齢" value={editData.age} onChange={e => setEditData({...editData, age: e.target.value})} style={inputStyle} />
-                        <input type="number" placeholder="身長" value={editData.height} onChange={e => setEditData({...editData, height: e.target.value})} style={inputStyle} />
-                        <input type="number" placeholder="体重" value={editData.weight} onChange={e => setEditData({...editData, weight: e.target.value})} style={inputStyle} />
+                        <input type="number" placeholder="Age" value={editData.age} onChange={e => setEditData({...editData, age: e.target.value})} style={inputStyle} />
+                        <input type="number" placeholder="Height" value={editData.height} onChange={e => setEditData({...editData, height: e.target.value})} style={inputStyle} />
+                        <input type="number" placeholder="Weight" value={editData.weight} onChange={e => setEditData({...editData, weight: e.target.value})} style={inputStyle} />
                       </div>
                     )}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.5rem', backgroundColor: 'var(--background)', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.75rem', width: '100%', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>注力ジャンル（複数選択可）:</span>
+                      <span style={{ fontSize: '0.75rem', width: '100%', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Genres:</span>
                       {genreOptions.map(genre => (
                         <label key={genre} style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>
                           <input 
@@ -252,13 +237,13 @@ const MyPage: React.FC = () => {
                     </div>
                     {isTalent ? (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <input type="text" placeholder="趣味" value={editData.hobbies} onChange={e => setEditData({...editData, hobbies: e.target.value})} style={inputStyle} />
-                        <input type="text" placeholder="特技" value={editData.skills} onChange={e => setEditData({...editData, skills: e.target.value})} style={inputStyle} />
+                        <input type="text" placeholder="Hobbies" value={editData.hobbies} onChange={e => setEditData({...editData, hobbies: e.target.value})} style={inputStyle} />
+                        <input type="text" placeholder="Skills" value={editData.skills} onChange={e => setEditData({...editData, skills: e.target.value})} style={inputStyle} />
                       </div>
                     ) : (
-                      <input type="url" placeholder="公式サイトURL" value={(editData as any).website_url || ''} onChange={e => setEditData({...editData, website_url: e.target.value} as any)} style={inputStyle} />
+                      <input type="url" placeholder="Official Website URL" value={(editData as any).website_url || ''} onChange={e => setEditData({...editData, website_url: e.target.value} as any)} style={inputStyle} />
                     )}
-                    <textarea placeholder={isTalent ? "自己紹介・意気込み" : "事務所紹介・募集要項など"} value={editData.bio} onChange={e => setEditData({...editData, bio: e.target.value})} style={{ ...inputStyle, minHeight: '120px' }} />
+                    <textarea placeholder={isTalent ? "Bio / Motivation" : "Agency description / Requirements"} value={editData.bio} onChange={e => setEditData({...editData, bio: e.target.value})} style={{ ...inputStyle, minHeight: '120px' }} />
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Instagram size={18} /><input type="text" placeholder="Instagram ID" value={editData.instagram_url} onChange={e => setEditData({...editData, instagram_url: e.target.value})} style={inputStyle} /></div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Twitter size={18} /><input type="text" placeholder="X ID" value={editData.x_url} onChange={e => setEditData({...editData, x_url: e.target.value})} style={inputStyle} /></div>
@@ -266,14 +251,14 @@ const MyPage: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>{currentUser?.full_name || currentUser?.name || '名前未設定'}</h1>
+                    <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>{currentUser?.full_name || currentUser?.name || 'No Name'}</h1>
                     <div style={{ display: 'flex', gap: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                      <span><MapPin size={14} /> {currentUser?.location || '未設定'}</span>
-                      {isTalent && currentUser?.age && <span>{currentUser.age}歳</span>}
-                      {isTalent && currentUser?.height && <span>{currentUser.height}cm</span>}
+                      <span><MapPin size={14} /> {currentUser?.location || 'Not set'}</span>
+                      {isTalent && currentUser?.age && <span>{currentUser.age}{t('mypage.age')}</span>}
+                      {isTalent && currentUser?.height && <span>{currentUser.height}{t('mypage.height')}</span>}
                       {isAgency && currentUser?.website_url && (
                         <a href={currentUser.website_url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <ExternalLink size={14} /> 公式サイト
+                          <ExternalLink size={14} /> {t('mypage.official_site')}
                         </a>
                       )}
                     </div>
@@ -282,7 +267,7 @@ const MyPage: React.FC = () => {
                         <span key={g} style={{ backgroundColor: 'var(--accent)', color: 'var(--secondary)', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 600 }}>{g}</span>
                       ))}
                     </div>
-                    <p style={{ fontSize: '0.9375rem', lineHeight: 1.6, marginBottom: '1rem', whiteSpace: 'pre-wrap' }}>{currentUser?.bio || '紹介文がありません'}</p>
+                    <p style={{ fontSize: '0.9375rem', lineHeight: 1.6, marginBottom: '1rem', whiteSpace: 'pre-wrap' }}>{currentUser?.bio || t('mypage.no_bio')}</p>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                       {currentUser?.instagram_url && <a href={`https://instagram.com/${currentUser.instagram_url}`} target="_blank" rel="noreferrer"><Instagram size={20} color="var(--text-main)" /></a>}
                       {currentUser?.x_url && <a href={`https://twitter.com/${currentUser.x_url}`} target="_blank" rel="noreferrer"><Twitter size={20} color="var(--text-main)" /></a>}
@@ -293,12 +278,12 @@ const MyPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 {isEditing ? (
                   <>
-                    <button onClick={handleSave} disabled={loading} className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}><Save size={16} /> 保存</button>
+                    <button onClick={handleSave} disabled={loading} className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}><Save size={16} /> {t('mypage.save')}</button>
                     <button onClick={() => setIsEditing(false)} className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}><X size={16} /></button>
                   </>
                 ) : (
                   <>
-                    <button onClick={startEditing} className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}><Edit size={16} /> 編集</button>
+                    <button onClick={startEditing} className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}><Edit size={16} /> {t('mypage.edit')}</button>
                     <button onClick={handleLogout} className="btn" style={{ padding: '0.5rem 1rem', color: 'var(--error)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}><LogOut size={16} /></button>
                   </>
                 )}
@@ -306,25 +291,25 @@ const MyPage: React.FC = () => {
             </div>
           </div>
         </div>
-        </div>
+      </div>
 
-        {/* SNS Share Section */}
-        <div style={{ ...cardStyle, marginBottom: '2rem', border: '2px solid var(--accent)', background: 'linear-gradient(135deg, var(--surface) 0%, rgba(212, 175, 55, 0.05) 100%)' }}>
-        <h2 style={cardTitleStyle}><Star size={20} /> プロフィールをSNSでシェア</h2>
+      {/* SNS Share Section */}
+      <div style={{ ...cardStyle, marginBottom: '2rem', border: '2px solid var(--accent)', background: 'linear-gradient(135deg, var(--surface) 0%, rgba(212, 175, 55, 0.05) 100%)' }}>
+        <h2 style={cardTitleStyle}><Star size={20} /> {t('mypage.share_sns')}</h2>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-          SNSで活動をアピールして、事務所やファンからの注目を集めましょう！
+          {t('mypage.share_desc')}
         </p>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button 
             onClick={() => {
               const shareUrl = window.location.origin + `/detail/${role}/${user?.id}`;
-              const text = encodeURIComponent(`DreamBridgeで${isTalent ? '志望者' : '事務所'}として活動中！\n私のプロフィールをチェックしてね！\n`);
+              const text = encodeURIComponent(`I'm active on DreamBridge! Check out my profile!\n`);
               window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(shareUrl)}`, '_blank');
             }}
             className="btn" 
             style={{ backgroundColor: '#1DA1F2', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem' }}
           >
-            <Twitter size={18} /> Xでシェア
+            <Twitter size={18} /> {t('mypage.share_x')}
           </button>
 
           <button 
@@ -333,8 +318,8 @@ const MyPage: React.FC = () => {
               if (navigator.share) {
                 try {
                   await navigator.share({
-                    title: 'DreamBridge プロフィール',
-                    text: '私のプロフィールをチェックしてね！',
+                    title: 'DreamBridge Profile',
+                    text: 'Check out my profile!',
                     url: shareUrl,
                   });
                 } catch (err) {
@@ -342,40 +327,39 @@ const MyPage: React.FC = () => {
                 }
               } else {
                 navigator.clipboard.writeText(shareUrl);
-                alert('URLをコピーしました！インスタのストーリー等に貼り付けてください。');
+                alert('URL copied! Please paste it in your Instagram story.');
               }
             }}
             className="btn" 
             style={{ backgroundColor: '#E4405F', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem' }}
           >
-            <Instagram size={18} /> インスタ・その他でシェア
+            <Instagram size={18} /> {t('mypage.share_insta')}
           </button>
 
           <button 
             onClick={() => {
               const shareUrl = window.location.origin + `/detail/${role}/${user?.id}`;
               navigator.clipboard.writeText(shareUrl);
-              alert('プロフィールURLをコピーしました！');
+              alert('Profile URL copied!');
             }}
             className="btn btn-outline" 
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem' }}
           >
-            <ExternalLink size={18} /> URLをコピー
+            <ExternalLink size={18} /> {t('mypage.copy_url')}
           </button>
         </div>
-        </div>
+      </div>
 
-        {/* Media Portfolio */}
-
+      {/* Media Portfolio */}
       {isTalent && (
         <div style={cardStyle}>
-          <h2 style={cardTitleStyle}><Image size={20} /> ポートフォリオ</h2>
+          <h2 style={cardTitleStyle}><Image size={20} /> {t('mypage.portfolio')}</h2>
           
           {/* Photos */}
           <div style={{ marginBottom: '2rem' }}>
             <h3 style={{ fontSize: '0.9375rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-              <span>写真集</span>
-              <button onClick={() => photoInputRef.current?.click()} style={addMediaBtnStyle}><Plus size={14} /> 追加</button>
+              <span>{t('mypage.photos')}</span>
+              <button onClick={() => photoInputRef.current?.click()} style={addMediaBtnStyle}><Plus size={14} /> {t('mypage.add')}</button>
               <input type="file" ref={photoInputRef} onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'avatars', 'photos')} accept="image/*" style={{ display: 'none' }} />
             </h3>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -392,8 +376,8 @@ const MyPage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
             <div>
               <h3 style={{ fontSize: '0.9375rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                <span>動画</span>
-                <button onClick={() => videoInputRef.current?.click()} style={addMediaBtnStyle}><Plus size={14} /> 追加</button>
+                <span>{t('mypage.videos')}</span>
+                <button onClick={() => videoInputRef.current?.click()} style={addMediaBtnStyle}><Plus size={14} /> {t('mypage.add')}</button>
                 <input type="file" ref={videoInputRef} onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'videos', 'videos')} accept="video/*" style={{ display: 'none' }} />
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -407,8 +391,8 @@ const MyPage: React.FC = () => {
             </div>
             <div>
               <h3 style={{ fontSize: '0.9375rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                <span>音声（ボイスサンプル）</span>
-                <button onClick={() => audioInputRef.current?.click()} style={addMediaBtnStyle}><Plus size={14} /> 追加</button>
+                <span>{t('mypage.audios')}</span>
+                <button onClick={() => audioInputRef.current?.click()} style={addMediaBtnStyle}><Plus size={14} /> {t('mypage.add')}</button>
                 <input type="file" ref={audioInputRef} onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'audios', 'audios')} accept="audio/*" style={{ display: 'none' }} />
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

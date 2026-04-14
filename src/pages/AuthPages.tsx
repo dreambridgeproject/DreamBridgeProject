@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../context/LanguageContext';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,11 +18,10 @@ export const LoginPage: React.FC = () => {
 
     const timeoutId = setTimeout(() => {
       setLoading(false);
-      setError('サーバーからの応答が一定時間を超えました。Supabaseが再開中（Resuming）の可能性があります。数分待ってからページをリロードして再試行してください。');
+      setError(t('auth.timeout_error'));
     }, 15000);
 
     try {
-      console.log('Attempting login for:', email);
       const { data, error: loginError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -29,17 +30,14 @@ export const LoginPage: React.FC = () => {
       clearTimeout(timeoutId);
 
       if (loginError) {
-        console.error('Login error:', loginError);
-        setError(`ログイン失敗: ${loginError.message}`);
+        setError(`${t('auth.login_error')}: ${loginError.message}`);
         setLoading(false);
       } else if (data.user) {
-        console.log('Login successful');
         navigate('/mypage');
       }
     } catch (err: any) {
       clearTimeout(timeoutId);
-      console.error('Unexpected login error:', err);
-      setError('予期せぬエラーが発生しました。接続設定を確認してください。');
+      setError(t('auth.login_error'));
       setLoading(false);
     }
   };
@@ -47,23 +45,23 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="container" style={{ padding: '5rem 1rem', maxWidth: '400px' }}>
       <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: 'var(--shadow)' }}>
-        <h2 style={{ marginBottom: '2rem', textAlign: 'center' }}>ログイン</h2>
+        <h2 style={{ marginBottom: '2rem', textAlign: 'center', color: '#1a1a1a' }}>{t('auth.login')}</h2>
         {error && <div style={{ color: 'red', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
         <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleLogin}>
           <input 
             type="email" 
-            placeholder="メールアドレス" 
+            placeholder={t('auth.email')} 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%' }} 
+            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
             required 
           />
           <input 
             type="password" 
-            placeholder="パスワード" 
+            placeholder={t('auth.password')} 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%' }} 
+            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
             required 
           />
           <button 
@@ -72,12 +70,12 @@ export const LoginPage: React.FC = () => {
             disabled={loading}
             style={{ width: '100%', marginTop: '0.5rem' }}
           >
-            {loading ? 'ログイン中...' : 'ログイン'}
+            {loading ? t('auth.logging_in') : t('auth.login')}
           </button>
         </form>
-        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem' }}>
-          アカウントをお持ちでない方は<br />
-          <Link to="/" style={{ color: 'var(--accent)' }}>トップページ</Link>から登録してください
+        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#666' }}>
+          {t('auth.no_account')}<br />
+          <Link to="/" style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('auth.from_top')}</Link>
         </div>
       </div>
     </div>
@@ -87,6 +85,7 @@ export const LoginPage: React.FC = () => {
 export const SignupPage: React.FC = () => {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -114,7 +113,7 @@ export const SignupPage: React.FC = () => {
       setError(error.message);
       setLoading(false);
     } else {
-      alert('確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。');
+      alert(t('auth.signup_success'));
       navigate('/login');
     }
   };
@@ -122,25 +121,25 @@ export const SignupPage: React.FC = () => {
   return (
     <div className="container" style={{ padding: '5rem 1rem', maxWidth: '400px' }}>
       <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: 'var(--shadow)' }}>
-        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-          {type === 'talent' ? '志望者登録' : '事務所登録'}
+        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center', color: '#1a1a1a' }}>
+          {type === 'talent' ? t('auth.talent_signup') : t('auth.agency_signup')}
         </h2>
         {error && <div style={{ color: 'red', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
         <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleSignup}>
           <input 
             type="email" 
-            placeholder="メールアドレス" 
+            placeholder={t('auth.email')} 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%' }} 
+            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
             required 
           />
           <input 
             type="password" 
-            placeholder="パスワード" 
+            placeholder={t('auth.password')} 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%' }} 
+            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
             required 
           />
           
@@ -153,11 +152,23 @@ export const SignupPage: React.FC = () => {
               style={{ marginTop: '0.25rem' }}
               required 
             />
-            <label htmlFor="tos-agree" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              <Link to="/legal#tos" target="_blank" style={{ color: 'var(--accent)', fontWeight: 600 }}>利用規約</Link>
-              および
-              <Link to="/legal#privacy" target="_blank" style={{ color: 'var(--accent)', fontWeight: 600 }}>プライバシーポリシー</Link>
-              に同意します。
+            <label htmlFor="tos-agree" style={{ fontSize: '0.75rem', color: '#666', lineHeight: 1.5 }}>
+              {language === 'ja' ? (
+                <>
+                  <Link to="/legal#tos" target="_blank" style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('auth.agree_tos')}</Link>
+                  {t('auth.agree_and')}
+                  <Link to="/legal#privacy" target="_blank" style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('auth.agree_privacy')}</Link>
+                  {t('auth.agree_to')}
+                </>
+              ) : (
+                <>
+                  {t('auth.agree_to')}
+                  <Link to="/legal#tos" target="_blank" style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('auth.agree_tos')}</Link>
+                  {' '}{t('auth.agree_and')}{' '}
+                  <Link to="/legal#privacy" target="_blank" style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('auth.agree_privacy')}</Link>
+                  .
+                </>
+              )}
             </label>
           </div>
 
@@ -167,7 +178,7 @@ export const SignupPage: React.FC = () => {
             style={{ width: '100%', marginTop: '0.5rem', opacity: agreed && !loading ? 1 : 0.6 }}
             disabled={!agreed || loading}
           >
-            {loading ? '送信中...' : '同意して登録する'}
+            {loading ? t('auth.sending') : t('auth.signup_btn')}
           </button>
         </form>
       </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types';
 import { 
@@ -11,6 +12,7 @@ import {
 const DetailPage: React.FC = () => {
   const { type, id } = useParams<{ type: 'talent' | 'agency'; id: string }>();
   const { currentUser, role, likes, toggleLike, sendOffer, offers } = useUser();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -34,8 +36,8 @@ const DetailPage: React.FC = () => {
     if (id) fetchProfile();
   }, [id]);
 
-  if (loading) return <div className="container" style={{ padding: '5rem', textAlign: 'center' }}>読み込み中...</div>;
-  if (!profile) return <div className="container" style={{ padding: '5rem', textAlign: 'center' }}>ユーザーが見つかりませんでした。</div>;
+  if (loading) return <div className="container" style={{ padding: '5rem', textAlign: 'center', color: 'var(--text-main)' }}>{t('mypage.loading')}</div>;
+  if (!profile) return <div className="container" style={{ padding: '5rem', textAlign: 'center', color: 'var(--text-main)' }}>{t('search.no_results')}</div>;
 
   const isLiked = likes.includes(profile.id);
   const existingOffer = offers.find(o => 
@@ -56,13 +58,13 @@ const DetailPage: React.FC = () => {
     if (!canSendOffer) return;
     if (existingOffer) return;
     sendOffer(profile.id);
-    alert('オファーを送信しました！');
+    alert(t('detail.offer_sent'));
   };
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
       <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-muted)', marginBottom: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}>
-        <ChevronLeft size={20} /> 戻る
+        <ChevronLeft size={20} /> {t('detail.back')}
       </button>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
@@ -76,7 +78,7 @@ const DetailPage: React.FC = () => {
             />
             {profile.verificationStatus === 'verified' && (
               <div style={{ position: 'absolute', top: '1rem', right: '1rem', backgroundColor: 'var(--accent)', color: 'var(--secondary)', padding: '0.25rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <ShieldCheck size={14} /> 運営認証済み
+                <ShieldCheck size={14} /> {t('detail.verified')}
               </div>
             )}
           </div>
@@ -101,11 +103,11 @@ const DetailPage: React.FC = () => {
                 className="btn btn-primary" 
                 style={{ width: '100%', padding: '1rem', opacity: (existingOffer || !canSendOffer) ? 0.6 : 1 }}
               >
-                {!canSendOffer && <Lock size={20} />} {existingOffer ? 'オファー済み' : 'オファーを送る'}
+                {!canSendOffer && <Lock size={20} />} {existingOffer ? t('detail.offered') : t('detail.send_offer')}
               </button>
               {!canSendOffer && (
                 <p style={{ position: 'absolute', bottom: '-20px', left: 0, right: 0, textAlign: 'center', fontSize: '0.7rem', color: 'var(--accent)' }}>
-                  スタンダードプラン以上でオファー可能
+                  {t('detail.restricted_offer')}
                 </p>
               )}
             </div>
@@ -113,13 +115,13 @@ const DetailPage: React.FC = () => {
         </div>
 
         {/* Right: Profile Details */}
-        <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '2rem', boxShadow: 'var(--shadow)', border: '1px solid var(--border)' }}>
+        <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '2rem', boxShadow: 'var(--shadow)', border: '1px solid var(--border)', color: 'var(--text-main)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <h1 style={{ fontSize: '2rem' }}>{profile.full_name || profile.name}</h1>
             {profile.verificationStatus === 'verified' && <ShieldCheck size={24} style={{ color: 'var(--accent)' }} />}
           </div>
           <p style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-            <MapPin size={20} /> {profile.location || '地域未設定'}
+            <MapPin size={20} /> {profile.location || t('mypage.location')}
           </p>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '2rem' }}>
@@ -132,18 +134,18 @@ const DetailPage: React.FC = () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <section>
-              <h2 style={sectionTitleStyle}>紹介・意気込み</h2>
-              <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.bio || '自己紹介文がありません。'}</p>
+              <h2 style={sectionTitleStyle}>{t('detail.bio_title')}</h2>
+              <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.bio || t('detail.no_bio')}</p>
             </section>
 
             {isTalentDetail && (
               <section>
-                <h2 style={sectionTitleStyle}>スペック情報</h2>
+                <h2 style={sectionTitleStyle}>{t('detail.specs_title')}</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                  {profile.age && <div><label style={labelStyle}>年齢</label><p style={valueStyle}>{profile.age}歳</p></div>}
-                  {profile.height && <div><label style={labelStyle}>身長</label><p style={valueStyle}>{profile.height}cm</p></div>}
-                  {profile.hobbies && <div><label style={labelStyle}>趣味</label><p style={valueStyle}>{profile.hobbies}</p></div>}
-                  {profile.skills && <div><label style={labelStyle}>特技</label><p style={valueStyle}>{profile.skills}</p></div>}
+                  {profile.age && <div><label style={labelStyle}>{t('detail.age')}</label><p style={valueStyle}>{profile.age}{t('mypage.age')}</p></div>}
+                  {profile.height && <div><label style={labelStyle}>{t('detail.height')}</label><p style={valueStyle}>{profile.height}{t('mypage.height')}</p></div>}
+                  {profile.hobbies && <div><label style={labelStyle}>{t('detail.hobbies')}</label><p style={valueStyle}>{profile.hobbies}</p></div>}
+                  {profile.skills && <div><label style={labelStyle}>{t('detail.skills')}</label><p style={valueStyle}>{profile.skills}</p></div>}
                 </div>
               </section>
             )}
@@ -151,11 +153,11 @@ const DetailPage: React.FC = () => {
             {/* Media Gallery */}
             {(profile.photos?.length > 0 || profile.videos?.length > 0 || profile.audios?.length > 0) && (
               <section>
-                <h2 style={sectionTitleStyle}>メディア・ポートフォリオ</h2>
+                <h2 style={sectionTitleStyle}>{t('detail.media_title')}</h2>
                 
                 {profile.photos?.length > 0 && (
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <h4 style={mediaSubTitleStyle}><Image size={16} /> 写真</h4>
+                    <h4 style={mediaSubTitleStyle}><Image size={16} /> {t('detail.photos')}</h4>
                     <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
                       {profile.photos.map((p, i) => (
                         <img key={i} src={p} alt="" style={{ height: '120px', borderRadius: '4px', border: '1px solid var(--border)' }} />
@@ -166,7 +168,7 @@ const DetailPage: React.FC = () => {
 
                 {profile.videos?.length > 0 && (
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <h4 style={mediaSubTitleStyle}><Video size={16} /> 動画</h4>
+                    <h4 style={mediaSubTitleStyle}><Video size={16} /> {t('detail.videos')}</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       {profile.videos.map((v, i) => (
                         <video key={i} src={v} controls style={{ width: '100%', borderRadius: '8px', backgroundColor: '#000' }} />
@@ -177,7 +179,7 @@ const DetailPage: React.FC = () => {
 
                 {profile.audios?.length > 0 && (
                   <div>
-                    <h4 style={mediaSubTitleStyle}><Music size={16} /> 音声</h4>
+                    <h4 style={mediaSubTitleStyle}><Music size={16} /> {t('detail.audios')}</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {profile.audios.map((a, i) => (
                         <audio key={i} src={a} controls style={{ width: '100%' }} />
@@ -191,7 +193,7 @@ const DetailPage: React.FC = () => {
             {/* SNS Links */}
             {(profile.instagram_url || profile.x_url) && (
               <section>
-                <h2 style={sectionTitleStyle}>SNSリンク</h2>
+                <h2 style={sectionTitleStyle}>{t('detail.sns_title')}</h2>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   {profile.instagram_url && (
                     <a href={`https://instagram.com/${profile.instagram_url}`} target="_blank" rel="noreferrer" style={snsButtonStyle}>

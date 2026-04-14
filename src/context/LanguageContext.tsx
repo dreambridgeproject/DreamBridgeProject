@@ -1,0 +1,245 @@
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+
+type Language = 'ja' | 'en';
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+// 簡易的な翻訳マップ
+const translations: Record<Language, Record<string, string>> = {
+  ja: {
+    'nav.home': 'ホーム',
+    'nav.search': '探す',
+    'nav.offers': 'オファー',
+    'nav.chat': 'チャット',
+    'nav.mypage': 'マイページ',
+    'nav.notifications': '通知',
+    'nav.favorites': 'お気に入り',
+    'auth.login': 'ログイン',
+    'auth.register': '新規登録',
+    'header.menu': 'メニュー',
+    'header.notifications': '通知',
+    'landing.beta': 'ベータ版',
+    'landing.hero.title': '夢とチャンスをダイレクトに繋ぐ',
+    'landing.hero.subtitle': '志望者・ライバー・クリエイターと事務所が直接つながる、次世代のマッチングプラットフォーム',
+    'landing.hero.talent_signup': '志望者として登録',
+    'landing.hero.agency_signup': '事務所として登録',
+    'landing.features.title': 'DreamBridgeが選ばれる理由',
+    'landing.features.subtitle': '従来のスカウトやオーディションの常識を覆します。',
+    'auth.email': 'メールアドレス',
+    'auth.password': 'パスワード',
+    'auth.logging_in': 'ログイン中...',
+    'auth.no_account': 'アカウントをお持ちでない方は',
+    'auth.from_top': 'トップページから登録してください',
+    'auth.talent_signup': '志望者登録',
+    'auth.agency_signup': '事務所登録',
+    'auth.agree_tos': '利用規約',
+    'auth.agree_and': 'および',
+    'auth.agree_privacy': 'プライバシーポリシー',
+    'auth.agree_to': 'に同意します。',
+    'auth.signup_btn': '同意して登録する',
+    'auth.sending': '送信中...',
+    'auth.signup_success': '確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。',
+    'auth.login_error': 'ログインに失敗しました。',
+    'auth.timeout_error': 'サーバーからの応答が一定時間を超えました。数分待ってから再試行してください。',
+    'search.search_btn': '検索',
+    'search.placeholder_talent': '名前やキーワードで検索',
+    'search.placeholder_agency': '事務所名で検索',
+    'search.no_results': '該当するユーザーが見つかりませんでした。',
+    'genre.all': 'すべて',
+    'genre.idol': 'アイドル',
+    'genre.model': 'モデル',
+    'genre.actor': '俳優',
+    'genre.singer': '歌手',
+    'genre.dancer': 'ダンサー',
+    'genre.influencer': 'インフルエンサー',
+    'genre.voice': '声優',
+    'genre.creator': 'クリエイター',
+    'genre.liver': 'ライバー',
+    'genre.agency_talent': '芸能',
+    'genre.agency_music': '音楽',
+    'genre.agency_stage': '舞台',
+    'genre.agency_movie': '映像',
+    'detail.back': '戻る',
+    'detail.verified': '運営認証済み',
+    'detail.send_offer': 'オファーを送る',
+    'detail.offered': 'オファー済み',
+    'detail.offer_sent': 'オファーを送信しました！',
+    'detail.restricted_offer': 'スタンダードプラン以上でオファー可能',
+    'detail.bio_title': '紹介・意気込み',
+    'detail.no_bio': '自己紹介文がありません。',
+    'detail.specs_title': 'スペック情報',
+    'detail.age': '年齢',
+    'detail.height': '身長',
+    'detail.hobbies': '趣味',
+    'detail.skills': '特技',
+    'detail.media_title': 'メディア・ポートフォリオ',
+    'detail.photos': '写真',
+    'detail.videos': '動画',
+    'detail.audios': '音声',
+    'detail.sns_title': 'SNSリンク',
+    'mypage.title': 'マイページ',
+    'mypage.search_agency': '事務所を探す',
+    'mypage.search_talent': '志望者を探す',
+    'mypage.chat_offers': 'チャット＆オファー',
+    'mypage.favorites': 'お気に入り',
+    'mypage.plan_mgmt': 'プラン管理',
+    'mypage.admin': '運営管理',
+    'mypage.edit': '編集',
+    'mypage.save': '保存',
+    'mypage.cancel': 'キャンセル',
+    'mypage.logout_btn': 'ログアウト',
+    'mypage.share_sns': 'プロフィールをSNSでシェア',
+    'mypage.share_desc': 'SNSで活動をアピールして、事務所やファンからの注目を集めましょう！',
+    'mypage.share_x': 'Xでシェア',
+    'mypage.share_insta': 'インスタ・その他でシェア',
+    'mypage.copy_url': 'URLをコピー',
+    'mypage.portfolio': 'ポートフォリオ',
+    'mypage.photos': '写真集',
+    'mypage.videos': '動画',
+    'mypage.audios': '音声（ボイスサンプル）',
+    'mypage.add': '追加',
+    'mypage.delete_confirm': '削除してもよろしいですか？',
+    'mypage.upload_success': 'アップロードが完了しました！',
+    'mypage.save_error': '保存に失敗しました。',
+    'mypage.location': '拠点',
+    'mypage.age': '歳',
+    'mypage.height': 'cm',
+    'mypage.official_site': '公式サイト',
+    'mypage.no_bio': '紹介文がありません',
+    'mypage.loading': '読み込み中...',
+    'search.title': '才能を探す',
+    'search.placeholder': 'キーワードで検索...',
+  },
+  en: {
+    'nav.home': 'Home',
+    'nav.search': 'Search',
+    'nav.offers': 'Offers',
+    'nav.chat': 'Chat',
+    'nav.mypage': 'My Page',
+    'nav.notifications': 'Notifications',
+    'nav.favorites': 'Favorites',
+    'auth.login': 'Log In',
+    'auth.email': 'Email Address',
+    'auth.password': 'Password',
+    'auth.logging_in': 'Logging in...',
+    'auth.no_account': "Don't have an account?",
+    'auth.from_top': 'Register from the Top Page',
+    'auth.talent_signup': 'Talent Registration',
+    'auth.agency_signup': 'Agency Registration',
+    'auth.agree_tos': 'Terms of Service',
+    'auth.agree_and': 'and',
+    'auth.agree_privacy': 'Privacy Policy',
+    'auth.agree_to': 'I agree to the ',
+    'auth.signup_btn': 'Agree and Register',
+    'auth.sending': 'Sending...',
+    'auth.signup_success': 'Confirmation email sent. Please click the link in the email to complete registration.',
+    'auth.login_error': 'Login failed.',
+    'auth.timeout_error': 'Server response timed out. Please wait a few minutes and try again.',
+    'search.search_btn': 'Search',
+    'search.placeholder_talent': 'Search by name or keyword',
+    'search.placeholder_agency': 'Search by agency name',
+    'search.no_results': 'No users found.',
+    'genre.all': 'All',
+    'genre.idol': 'Idol',
+    'genre.model': 'Model',
+    'genre.actor': 'Actor',
+    'genre.singer': 'Singer',
+    'genre.dancer': 'Dancer',
+    'genre.influencer': 'Influencer',
+    'genre.voice': 'Voice Actor',
+    'genre.creator': 'Creator',
+    'genre.liver': 'Liver',
+    'genre.agency_talent': 'Ent.',
+    'genre.agency_music': 'Music',
+    'genre.agency_stage': 'Stage',
+    'genre.agency_movie': 'Movie',
+    'detail.back': 'Back',
+    'detail.verified': 'Verified Agency',
+    'detail.send_offer': 'Send Offer',
+    'detail.offered': 'Offered',
+    'detail.offer_sent': 'Offer sent!',
+    'detail.restricted_offer': 'Upgrade to Standard Plan or higher to send offers.',
+    'detail.bio_title': 'Introduction / Motivation',
+    'detail.no_bio': 'No introduction text available.',
+    'detail.specs_title': 'Specifications',
+    'detail.age': 'Age',
+    'detail.height': 'Height',
+    'detail.hobbies': 'Hobbies',
+    'detail.skills': 'Skills',
+    'detail.media_title': 'Media / Portfolio',
+    'detail.photos': 'Photos',
+    'detail.videos': 'Videos',
+    'detail.audios': 'Audios',
+    'detail.sns_title': 'SNS Links',
+    'mypage.title': 'My Page',
+    'mypage.search_agency': 'Search Agencies',
+    'mypage.search_talent': 'Search Talent',
+    'mypage.chat_offers': 'Chat & Offers',
+    'mypage.favorites': 'Favorites',
+    'mypage.plan_mgmt': 'Plan Management',
+    'mypage.admin': 'Admin Dashboard',
+    'mypage.edit': 'Edit',
+    'mypage.save': 'Save',
+    'mypage.cancel': 'Cancel',
+    'mypage.logout_btn': 'Log Out',
+    'mypage.share_sns': 'Share Profile on SNS',
+    'mypage.share_desc': 'Promote your activities on SNS and get noticed by agencies and fans!',
+    'mypage.share_x': 'Share on X',
+    'mypage.share_insta': 'Share on Insta/Others',
+    'mypage.copy_url': 'Copy URL',
+    'mypage.portfolio': 'Portfolio',
+    'mypage.photos': 'Photos',
+    'mypage.videos': 'Videos',
+    'mypage.audios': 'Audios (Voice Samples)',
+    'mypage.add': 'Add',
+    'mypage.delete_confirm': 'Are you sure you want to delete?',
+    'mypage.upload_success': 'Upload completed!',
+    'mypage.save_error': 'Failed to save.',
+    'mypage.location': 'Location',
+    'mypage.age': 'years old',
+    'mypage.height': 'cm',
+    'mypage.official_site': 'Official Site',
+    'mypage.no_bio': 'No introduction text',
+    'mypage.loading': 'Loading...',
+    'search.title': 'Find Talent',
+    'search.placeholder': 'Search by keyword...',
+  }
+};
+
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // ブラウザの言語設定を初期値にする（デフォルトは 'ja'）
+  const [language, setLanguageState] = useState<Language>(() => {
+    const saved = localStorage.getItem('language');
+    if (saved === 'ja' || saved === 'en') return saved;
+    return 'ja';
+  });
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('language', lang);
+  };
+
+  const t = (key: string): string => {
+    return translations[language][key] || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};

@@ -2,9 +2,11 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Search, Heart, MessageSquare, User } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const BottomNav: React.FC = () => {
   const { currentUser, role } = useUser();
+  const { t } = useLanguage();
 
   // Show navigation always to ensure user can find legal pages or login
   // But content depends on role
@@ -41,7 +43,7 @@ const BottomNav: React.FC = () => {
         })}
       >
         <Search size={22} />
-        <span>探す</span>
+        <span>{t('nav.search')}</span>
       </NavLink>
       <NavLink 
         to="/favorites" 
@@ -58,7 +60,7 @@ const BottomNav: React.FC = () => {
         })}
       >
         <Heart size={22} />
-        <span>お気に入り</span>
+        <span>{t('nav.favorites')}</span>
       </NavLink>
       <NavLink 
         to="/chat" 
@@ -75,7 +77,7 @@ const BottomNav: React.FC = () => {
         })}
       >
         <MessageSquare size={22} />
-        <span>チャット</span>
+        <span>{t('nav.chat')}</span>
       </NavLink>
       <NavLink 
         to="/mypage" 
@@ -92,7 +94,7 @@ const BottomNav: React.FC = () => {
         })}
       >
         <User size={22} />
-        <span>マイページ</span>
+        <span>{t('nav.mypage')}</span>
       </NavLink>
     </nav>
   );

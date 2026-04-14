@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   Users, Building2, Star, ShieldCheck, Zap, 
   MessageSquare, ChevronRight, Play, Camera, Tv, Palette, Mic2
@@ -9,6 +10,7 @@ const heroImageUrl = 'https://images.unsplash.com/photo-1490642914619-7955a3fd48
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
 
   return (
     <div style={{ backgroundColor: 'var(--background)', color: 'var(--text-main)' }}>
@@ -41,7 +43,7 @@ const LandingPage: React.FC = () => {
             backdropFilter: 'blur(8px)',
             textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}>
-            BETA VERSION
+            {t('landing.beta')}
           </div>
           <h1 style={{
             fontSize: 'clamp(2.5rem, 8vw, 4.5rem)',
@@ -51,8 +53,11 @@ const LandingPage: React.FC = () => {
             letterSpacing: '-0.02em',
             textShadow: '0 4px 20px rgba(0,0,0,0.5)'
           }}>
-            夢とチャンスを<br />
-            <span style={{ color: 'var(--accent)' }}>ダイレクト</span>に繋ぐ
+            {language === 'ja' ? (
+              <>夢とチャンスを<br /><span style={{ color: 'var(--accent)' }}>ダイレクト</span>に繋ぐ</>
+            ) : (
+              <>Connecting Dreams and <span style={{ color: 'var(--accent)' }}>Opportunities</span> Directly</>
+            )}
           </h1>
           <p style={{
             fontSize: 'clamp(1rem, 4vw, 1.25rem)',
@@ -63,8 +68,7 @@ const LandingPage: React.FC = () => {
             textShadow: '0 2px 10px rgba(0,0,0,0.5)',
             fontWeight: 500
           }}>
-            志望者・ライバー・クリエイターと事務所が<br />
-            直接つながる、次世代のマッチングプラットフォーム
+            {t('landing.hero.subtitle')}
           </p>          <div style={{ 
             display: 'flex', 
             gap: '1rem', 
@@ -77,14 +81,14 @@ const LandingPage: React.FC = () => {
               className="btn btn-primary" 
               style={{ padding: '1.25rem 2rem', fontSize: '1.125rem', minWidth: '200px', boxShadow: '0 10px 20px rgba(212, 175, 55, 0.3)' }}
             >
-              志望者として登録 <ChevronRight size={20} />
+              {t('landing.hero.talent_signup')} <ChevronRight size={20} />
             </button>
             <button 
               onClick={() => navigate('/signup/agency')} 
               className="btn btn-outline" 
               style={{ padding: '1.25rem 2rem', fontSize: '1.125rem', minWidth: '200px' }}
             >
-              事務所として登録
+              {t('landing.hero.agency_signup')}
             </button>
           </div>
         </div>
