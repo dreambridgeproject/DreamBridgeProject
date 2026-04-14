@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   CreditCard, Building2, Smartphone, Store, 
   CheckCircle2, Plus, ChevronRight, AlertCircle,
@@ -8,25 +9,26 @@ import {
 
 const PaymentSettingsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   const paymentMethods = [
-    { id: 'card', name: 'クレジットカード', icon: <CreditCard size={24} />, desc: 'Visa, Mastercard, JCB, AMEX', status: '登録済み' },
-    { id: 'bank', name: '銀行振込 (請求書)', icon: <Building2 size={24} />, desc: 'エンタープライズプラン限定', status: '利用不可' },
-    { id: 'paypay', name: 'PayPay', icon: <Zap size={24} />, desc: '現在準備中です', status: '近日公開' },
-    { id: 'carrier', name: 'キャリア決済', icon: <SmartphoneNfc size={24} />, desc: 'ドコモ, au, SoftBank', status: '未設定' },
-    { id: 'apple_google', name: 'Apple / Google Pay', icon: <div style={{ fontWeight: 800 }}>Pay</div>, desc: 'デバイスの生体認証で決済', status: '利用可能' },
-    { id: 'conveni', name: 'コンビニ決済', icon: <Store size={24} />, desc: 'セブン, ファミマ, ローソン', status: '都度払い' },
+    { id: 'card', name: 'Credit Card', icon: <CreditCard size={24} />, desc: 'Visa, Mastercard, JCB, AMEX', status: 'Registered' },
+    { id: 'bank', name: 'Bank Transfer', icon: <Building2 size={24} />, desc: 'Enterprise plan only', status: 'Unavailable' },
+    { id: 'paypay', name: 'PayPay', icon: <Zap size={24} />, desc: 'Currently in preparation', status: 'Coming Soon' },
+    { id: 'carrier', name: 'Carrier Billing', icon: <SmartphoneNfc size={24} />, desc: 'Docomo, au, SoftBank', status: 'Not set' },
+    { id: 'apple_google', name: 'Apple / Google Pay', icon: <div style={{ fontWeight: 800 }}>Pay</div>, desc: 'Device biometrics', status: 'Available' },
+    { id: 'conveni', name: 'Convenience Store', icon: <Store size={24} />, desc: '7-Eleven, FamilyMart, Lawson', status: 'Pay-as-you-go' },
   ];
 
   return (
-    <div className="container" style={{ padding: '2rem 1rem', maxWidth: '600px' }}>
+    <div className="container" style={{ padding: '2rem 1rem', maxWidth: '600px', color: 'var(--text-main)' }}>
       <div style={{ marginBottom: '2rem' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <ChevronRight size={18} style={{ transform: 'rotate(180deg)' }} /> 戻る
+          <ChevronRight size={18} style={{ transform: 'rotate(180deg)' }} /> {t('detail.back')}
         </button>
-        <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>支払い方法の設定</h1>
-        <p style={{ color: 'var(--text-muted)' }}>プランの購入や更新に使用する決済手段を管理します。</p>
+        <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{t('pay.title')}</h1>
+        <p style={{ color: 'var(--text-muted)' }}>Manage your payment methods for plan purchases and renewals.</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -37,7 +39,7 @@ const PaymentSettingsPage: React.FC = () => {
             style={{ 
               ...methodItemStyle,
               border: selectedMethod === method.id ? '2px solid var(--accent)' : '1px solid var(--border)',
-              backgroundColor: selectedMethod === method.id ? 'rgba(var(--accent-rgb), 0.05)' : 'var(--surface)'
+              backgroundColor: selectedMethod === method.id ? 'rgba(212, 175, 55, 0.05)' : 'var(--surface)'
             }}
           >
             <div style={{ 
@@ -48,18 +50,18 @@ const PaymentSettingsPage: React.FC = () => {
               {method.icon}
             </div>
             <div style={{ flex: 1 }}>
-              <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{method.name}</h3>
+              <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>{method.name}</h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{method.desc}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
               <span style={{ 
                 fontSize: '0.75rem', 
                 fontWeight: 600,
-                color: method.status === '登録済み' ? '#10b981' : 'var(--text-muted)'
+                color: method.status === 'Registered' ? '#10b981' : 'var(--text-muted)'
               }}>
                 {method.status}
               </span>
-              {method.status === '未登録' || method.status === '未連携' ? (
+              {method.status === 'Not set' || method.status === 'Unavailable' ? (
                 <div style={{ color: 'var(--accent)', marginTop: '0.25rem' }}><Plus size={18} /></div>
               ) : (
                 <div style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}><ChevronRight size={18} /></div>
@@ -72,13 +74,13 @@ const PaymentSettingsPage: React.FC = () => {
       <div style={{ marginTop: '2.5rem', padding: '1.5rem', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 'var(--radius-md)', border: '1px solid #3b82f6', display: 'flex', gap: '1rem' }}>
         <AlertCircle size={24} color="#3b82f6" style={{ flexShrink: 0 }} />
         <div style={{ fontSize: '0.875rem', color: '#1d4ed8', lineHeight: 1.5 }}>
-          <strong>セキュリティについて:</strong><br />
-          カード番号等の機密情報は暗号化され、ISO 27001認証済みの安全な環境で管理されます。DreamBridgeが直接カード番号を保持することはありません。
+          <strong>Security:</strong><br />
+          Sensitive information such as card numbers is encrypted and managed in a secure ISO 27001 certified environment. DreamBridge does not store your card details directly.
         </div>
       </div>
 
       <button className="btn btn-primary" style={{ width: '100%', marginTop: '2rem', padding: '1rem' }}>
-        設定を保存する
+        {t('pay.save')}
       </button>
     </div>
   );

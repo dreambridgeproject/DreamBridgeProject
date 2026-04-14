@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../context/LanguageContext';
 import type { Profile } from '../types';
 import { 
   ShieldCheck, ShieldAlert, Check, X, 
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
+  const { t } = useLanguage();
   const [agencies, setAgencies] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,21 +38,21 @@ const AdminDashboard: React.FC = () => {
       .eq('id', id);
 
     if (error) {
-      alert('更新に失敗しました');
+      alert('Failed to update');
     } else {
       setAgencies(prev => prev.map(a => a.id === id ? { ...a, verificationStatus: status } : a));
-      alert(status === 'verified' ? '事務所を認証しました' : '認証を解除しました');
+      alert(status === 'verified' ? 'Agency Verified' : 'Verification Revoked');
     }
   };
 
   return (
-    <div className="container" style={{ padding: '2rem 1rem' }}>
+    <div className="container" style={{ padding: '2rem 1rem', color: 'var(--text-main)' }}>
       <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <ShieldCheck size={32} color="var(--accent)" /> 管理画面（ベータ）
+            <ShieldCheck size={32} color="var(--accent)" /> {t('admin.title')}
           </h1>
-          <p style={{ color: 'var(--text-muted)' }}>事務所ユーザーの認証・安全性管理</p>
+          <p style={{ color: 'var(--text-muted)' }}>Agency User Verification & Safety Management</p>
         </div>
         <button onClick={fetchAgencies} className="btn btn-outline" style={{ padding: '0.5rem' }}>
           <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
@@ -61,15 +63,15 @@ const AdminDashboard: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
-              <th style={thStyle}>事務所名 / ID</th>
-              <th style={thStyle}>地域 / SNS</th>
-              <th style={thStyle}>現在のステータス</th>
-              <th style={thStyle}>アクション</th>
+              <th style={thStyle}>Agency Name / ID</th>
+              <th style={thStyle}>Location / SNS</th>
+              <th style={thStyle}>Current Status</th>
+              <th style={thStyle}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {agencies.length === 0 ? (
-              <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>事務所ユーザーはまだ登録されていません</td></tr>
+              <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No agencies registered yet.</td></tr>
             ) : (
               agencies.map(agency => (
                 <tr key={agency.id} style={{ borderBottom: '1px solid var(--border)' }}>
@@ -83,7 +85,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </td>
                   <td style={tdStyle}>
-                    <div>{agency.location || '未設定'}</div>
+                    <div>{agency.location || 'Not set'}</div>
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
                       {agency.instagram_url && <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>IG</span>}
                       {agency.x_url && <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>X</span>}
@@ -91,9 +93,9 @@ const AdminDashboard: React.FC = () => {
                   </td>
                   <td style={tdStyle}>
                     {agency.verificationStatus === 'verified' ? (
-                      <span style={badgeStyle('#10b981')}><ShieldCheck size={12} /> 認証済み</span>
+                      <span style={badgeStyle('#10b981')}><ShieldCheck size={12} /> {t('offer.status_approved')}</span>
                     ) : (
-                      <span style={badgeStyle('var(--text-muted)')}><ShieldAlert size={12} /> 未認証</span>
+                      <span style={badgeStyle('var(--text-muted)')}><ShieldAlert size={12} /> Unverified</span>
                     )}
                   </td>
                   <td style={tdStyle}>
@@ -104,7 +106,7 @@ const AdminDashboard: React.FC = () => {
                           className="btn btn-primary" 
                           style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
                         >
-                          <Check size={14} /> 承認する
+                          <Check size={14} /> {t('admin.approve')}
                         </button>
                       ) : (
                         <button 
@@ -112,7 +114,7 @@ const AdminDashboard: React.FC = () => {
                           className="btn" 
                           style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
                         >
-                          <X size={14} /> 解除
+                          <X size={14} /> {t('admin.unverify')}
                         </button>
                       )}
                       <button 
@@ -120,7 +122,7 @@ const AdminDashboard: React.FC = () => {
                         className="btn btn-outline" 
                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
                       >
-                        プロフィール確認
+                        {t('fav.view_detail')}
                       </button>
                     </div>
                   </td>
@@ -134,29 +136,8 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-const thStyle: React.CSSProperties = {
-  textAlign: 'left',
-  padding: '1rem',
-  fontSize: '0.875rem',
-  color: 'var(--text-muted)',
-  fontWeight: 600
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: '1rem',
-  fontSize: '0.875rem'
-};
-
-const badgeStyle = (color: string): React.CSSProperties => ({
-  backgroundColor: color + '22',
-  color: color,
-  padding: '0.25rem 0.5rem',
-  borderRadius: '4px',
-  fontSize: '0.75rem',
-  fontWeight: 600,
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '0.25rem'
-});
+const thStyle: React.CSSProperties = { textAlign: 'left', padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 600 };
+const tdStyle: React.CSSProperties = { padding: '1rem', fontSize: '0.875rem' };
+const badgeStyle = (color: string): React.CSSProperties => ({ backgroundColor: color + '22', color: color, padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' });
 
 export default AdminDashboard;

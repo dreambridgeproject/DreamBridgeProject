@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import { mockTalents, mockAgencies } from '../data/mock';
 import { Send, ChevronLeft, MoreVertical, ClipboardList, MessageSquare } from 'lucide-react';
 import OffersPage from './OffersPage';
@@ -8,6 +9,7 @@ import OffersPage from './OffersPage';
 const ChatPage: React.FC = () => {
   const { offerId } = useParams<{ offerId?: string }>();
   const { currentUser, offers, messages, sendMessage, role } = useUser();
+  const { t } = useLanguage();
   const [inputText, setInputText] = useState('');
   const [activeTab, setActiveTab] = useState<'chats' | 'offers'>('chats');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -50,7 +52,7 @@ const ChatPage: React.FC = () => {
     return (
       <div className="container" style={{ padding: '1rem 0' }}>
         <div style={{ padding: '0 1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ fontSize: '1.5rem' }}>{activeTab === 'chats' ? 'チャット' : 'オファー'}</h1>
+          <h1 style={{ fontSize: '1.5rem', color: 'var(--text-main)' }}>{activeTab === 'chats' ? t('chat.title') : t('nav.offers')}</h1>
         </div>
 
         {/* Tab Switcher */}
@@ -68,10 +70,11 @@ const ChatPage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              cursor: 'pointer'
             }}
           >
-            <MessageSquare size={18} /> トーク
+            <MessageSquare size={18} /> {t('chat.talk_tab')}
           </button>
           <button 
             onClick={() => setActiveTab('offers')}
@@ -86,10 +89,11 @@ const ChatPage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              cursor: 'pointer'
             }}
           >
-            <ClipboardList size={18} /> オファー履歴
+            <ClipboardList size={18} /> {t('chat.history_tab')}
           </button>
         </div>
 
@@ -97,7 +101,7 @@ const ChatPage: React.FC = () => {
           {activeTab === 'offers' ? (
             <OffersPage />
           ) : (
-            <div style={{ backgroundColor: 'white', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow)', overflow: 'hidden' }}>
+            <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow)', overflow: 'hidden', border: '1px solid var(--border)' }}>
               {approvedOffers.length > 0 ? approvedOffers.map(offer => {
                 const { partner, isPartnerTalent } = getPartnerInfo(offer);
                 if (!partner) return null;
@@ -115,7 +119,7 @@ const ChatPage: React.FC = () => {
                     color: 'inherit'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--surface)'}
                   >
                     <img 
                       src={isPartnerTalent ? (partner as any).icon : (partner as any).logo} 
@@ -124,12 +128,12 @@ const ChatPage: React.FC = () => {
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{partner.name}</h3>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{partner.name}</h3>
                         {lastMsg && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {lastMsg ? lastMsg.text : 'チャットを開始しましょう！'}
+                          {lastMsg ? lastMsg.text : t('chat.start_chat')}
                         </p>
                         {unreadCount > 0 && (
                           <span style={{ 
@@ -151,7 +155,7 @@ const ChatPage: React.FC = () => {
                 );
               }) : (
                 <div style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--text-muted)' }}>
-                  承認されたオファーがありません。
+                  {t('chat.no_approved_offers')}
                 </div>
               )}
             </div>
@@ -163,13 +167,13 @@ const ChatPage: React.FC = () => {
 
   // Talk screen
   const { partner, isPartnerTalent } = getPartnerInfo(currentOffer);
-  if (!partner) return <div className="container">チャットが見つかりませんでした。</div>;
+  if (!partner) return <div className="container" style={{ color: 'var(--text-main)' }}>{t('chat.not_found')}</div>;
 
   return (
     <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
       {/* Chat Header */}
       <header style={{ 
-        backgroundColor: 'white', 
+        backgroundColor: 'var(--surface)', 
         padding: '0.75rem 1rem', 
         borderBottom: '1px solid var(--border)', 
         display: 'flex', 
@@ -186,9 +190,9 @@ const ChatPage: React.FC = () => {
             alt={partner.name} 
             style={{ width: '40px', height: '40px', borderRadius: isPartnerTalent ? '50%' : 'var(--radius-sm)', objectFit: 'cover' }}
           />
-          <h2 style={{ fontSize: '1.125rem' }}>{partner.name}</h2>
+          <h2 style={{ fontSize: '1.125rem', color: 'var(--text-main)' }}>{partner.name}</h2>
         </div>
-        <button style={{ background: 'none', color: 'var(--text-muted)' }}><MoreVertical size={20} /></button>
+        <button style={{ background: 'none', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><MoreVertical size={20} /></button>
       </header>
 
       {/* Messages Area */}
@@ -198,7 +202,7 @@ const ChatPage: React.FC = () => {
           flex: 1, 
           overflowY: 'auto', 
           padding: '1.5rem 1rem', 
-          backgroundColor: '#e2e8f0', // LINE-like background color
+          backgroundColor: 'var(--background)',
           display: 'flex',
           flexDirection: 'column',
           gap: '1rem'
@@ -211,7 +215,7 @@ const ChatPage: React.FC = () => {
           if (isSystem) {
             return (
               <div key={msg.id} style={{ textAlign: 'center' }}>
-                <span style={{ backgroundColor: 'rgba(0,0,0,0.1)', padding: '0.25rem 1rem', borderRadius: '1rem', fontSize: '0.75rem', color: 'white' }}>
+                <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '0.25rem 1rem', borderRadius: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   {msg.text}
                 </span>
               </div>
@@ -239,11 +243,12 @@ const ChatPage: React.FC = () => {
                   borderRadius: '1.25rem', 
                   fontSize: '0.9375rem',
                   lineHeight: 1.5,
-                  backgroundColor: isMine ? '#86efac' : 'white',
-                  color: 'black',
+                  backgroundColor: isMine ? 'var(--accent)' : 'var(--surface)',
+                  color: isMine ? 'var(--secondary)' : 'var(--text-main)',
                   position: 'relative',
                   borderTopRightRadius: isMine ? '0.25rem' : '1.25rem',
                   borderTopLeftRadius: isMine ? '1.25rem' : '0.25rem',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                 }}>
                   {msg.text}
                 </div>
@@ -258,7 +263,7 @@ const ChatPage: React.FC = () => {
 
       {/* Input Area */}
       <div style={{ 
-        backgroundColor: 'white', 
+        backgroundColor: 'var(--surface)', 
         padding: '0.75rem 1rem 2rem', 
         borderTop: '1px solid var(--border)',
         position: 'relative',
@@ -279,7 +284,7 @@ const ChatPage: React.FC = () => {
                 handleSend();
               }
             }}
-            placeholder="メッセージを入力..."
+            placeholder={t('chat.input_placeholder')}
             style={{ 
               flex: 1, 
               padding: '0.75rem 1rem', 
@@ -288,7 +293,9 @@ const ChatPage: React.FC = () => {
               resize: 'none',
               maxHeight: '120px',
               fontSize: '1rem',
-              lineHeight: '1.4'
+              lineHeight: '1.4',
+              backgroundColor: 'var(--background)',
+              color: 'var(--text-main)'
             }}
           />
           <button 
@@ -305,7 +312,9 @@ const ChatPage: React.FC = () => {
               justifyContent: 'center',
               transition: 'all 0.2s',
               flexShrink: 0,
-              boxShadow: inputText.trim() ? '0 2px 8px rgba(212, 175, 55, 0.3)' : 'none'
+              boxShadow: inputText.trim() ? '0 2px 8px rgba(212, 175, 55, 0.3)' : 'none',
+              border: 'none',
+              cursor: 'pointer'
             }}
           >
             <Send size={20} />

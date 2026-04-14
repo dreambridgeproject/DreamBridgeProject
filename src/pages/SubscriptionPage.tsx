@@ -1,16 +1,18 @@
 import React from 'react';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Check, Zap, Award, Building2, CreditCard } from 'lucide-react';
 
 const SubscriptionPage: React.FC = () => {
   const { role } = useUser();
+  const { t } = useLanguage();
 
   const isTalent = role === 'talent';
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>プラン選択</h1>
+        <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', color: 'var(--text-main)' }}>{t('sub.title')}</h1>
         <div style={{ 
           display: 'inline-block',
           backgroundColor: 'rgba(16, 185, 129, 0.1)', 
@@ -22,9 +24,9 @@ const SubscriptionPage: React.FC = () => {
           fontWeight: 800,
           marginBottom: '1.5rem'
         }}>
-          ベータ期間：フリープラン提供中
+          {t('sub.beta_notice')}
         </div>
-        <p style={{ color: 'var(--text-muted)' }}>安全なマッチングのため、現在は制限付きのフリープランのみご利用いただけます。</p>
+        <p style={{ color: 'var(--text-muted)' }}>{t('sub.beta_desc')}</p>
       </div>
 
       <div style={{ 
@@ -36,44 +38,40 @@ const SubscriptionPage: React.FC = () => {
       }}>
         {isTalent ? (
           <>
-            {/* Talent Plans - Stay Free */}
             <div style={planCardStyle}>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>フリー</h2>
-              <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem' }}>¥0</div>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{t('sub.free_plan')}</h2>
+              <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>¥0</div>
               <ul style={featureListStyle}>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> プロフィール作成</li>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> 事務所からのオファー受信</li>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> チャット機能（制限なし）</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Profile Creation</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Receive Offers</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Unlimited Chat</li>
               </ul>
-              <button className="btn btn-outline" style={{ width: '100%', marginTop: 'auto' }} disabled>現在のプラン</button>
+              <button className="btn btn-outline" style={{ width: '100%', marginTop: 'auto' }} disabled>{t('sub.current_plan')}</button>
             </div>
 
             <div style={{ ...planCardStyle, opacity: 0.6 }}>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>上位表示プラン</h2>
-              <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem' }}>¥980 <span style={{ fontSize: '1rem', fontWeight: 400 }}>/ 月</span></div>
-              <p style={{ fontSize: '0.875rem' }}>正式リリース時に提供開始予定</p>
-              <button className="btn btn-primary" style={{ width: '100%', marginTop: 'auto' }} disabled>近日公開</button>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{t('sub.premium_plan')}</h2>
+              <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>¥980 <span style={{ fontSize: '1rem', fontWeight: 400 }}>/ month</span></div>
+              <button className="btn btn-primary" style={{ width: '100%', marginTop: 'auto' }} disabled>{t('sub.coming_soon')}</button>
             </div>
           </>
         ) : (
           <>
-            {/* Agency Plans - Restricted */}
             <div style={planCardStyle}>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>フリー（ベータ）</h2>
-              <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem' }}>¥0</div>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{t('sub.agency_free')}</h2>
+              <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>¥0</div>
               <ul style={featureListStyle}>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> <strong>月間3件までのオファー</strong></li>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> 志望者検索機能</li>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> 基本的なチャット機能</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> <strong>Up to 3 offers/mo</strong></li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Talent Search</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Basic Chat</li>
               </ul>
-              <button className="btn btn-outline" style={{ width: '100%', marginTop: 'auto' }} disabled>現在のプラン</button>
+              <button className="btn btn-outline" style={{ width: '100%', marginTop: 'auto' }} disabled>{t('sub.current_plan')}</button>
             </div>
 
             <div style={{ ...planCardStyle, opacity: 0.6 }}>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>スタンダード</h2>
-              <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem' }}>¥19,800 <span style={{ fontSize: '1rem', fontWeight: 400 }}>/ 月</span></div>
-              <p style={{ fontSize: '0.875rem' }}>本人確認・審査完了後に開放予定</p>
-              <button className="btn btn-primary" style={{ width: '100%', marginTop: 'auto' }} disabled>近日公開</button>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{t('sub.agency_standard')}</h2>
+              <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>¥19,800 <span style={{ fontSize: '1rem', fontWeight: 400 }}>/ month</span></div>
+              <button className="btn btn-primary" style={{ width: '100%', marginTop: 'auto' }} disabled>{t('sub.coming_soon')}</button>
             </div>
           </>
         )}
@@ -88,77 +86,25 @@ const SubscriptionPage: React.FC = () => {
         border: '1px solid var(--border)',
         boxShadow: 'var(--shadow-sm)'
       }}>
-        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>お支払い方法（正式リリース後）</h3>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          flexWrap: 'wrap', 
-          gap: '2rem', 
-          marginBottom: '2rem',
-          color: 'var(--text-main)',
-          opacity: 0.6
-        }}>
-          <div style={paymentIconStyle}><CreditCard size={24} /><span style={{ fontSize: '0.75rem' }}>カード</span></div>
+        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', color: 'var(--text-main)' }}>{t('sub.payment_methods')}</h3>
+        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '2rem', marginBottom: '2rem', color: 'var(--text-main)', opacity: 0.6 }}>
+          <div style={paymentIconStyle}><CreditCard size={24} /><span style={{ fontSize: '0.75rem' }}>Card</span></div>
           <div style={paymentIconStyle}><Zap size={24} /><span style={{ fontSize: '0.75rem' }}>PayPay</span></div>
-          <div style={paymentIconStyle}><Award size={24} /><span style={{ fontSize: '0.75rem' }}>キャリア決済</span></div>
+          <div style={paymentIconStyle}><Award size={24} /><span style={{ fontSize: '0.75rem' }}>Carrier</span></div>
           <div style={paymentIconStyle}><div style={{ fontWeight: 800 }}>Pay</div><span style={{ fontSize: '0.75rem' }}>Apple/Google</span></div>
-          <div style={paymentIconStyle}><Building2 size={24} /><span style={{ fontSize: '0.75rem' }}>銀行振込</span></div>
+          <div style={paymentIconStyle}><Building2 size={24} /><span style={{ fontSize: '0.75rem' }}>Bank</span></div>
         </div>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
-          ※現在ベータ版のため決済は行われません。正式リリース後にStripeを介した安全な決済システムを導入予定です。
+          ※ Currently in Beta. Stripe integration for secure payments coming soon at official release.
         </p>
       </div>
     </div>
   );
 };
 
-const paymentIconStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '0.5rem',
-  opacity: 0.8
-};
-
-const planCardStyle: React.CSSProperties = {
-  backgroundColor: 'var(--surface)',
-  borderRadius: 'var(--radius-lg)',
-  padding: '2rem',
-  boxShadow: 'var(--shadow)',
-  border: '1px solid var(--border)',
-  display: 'flex',
-  flexDirection: 'column',
-  position: 'relative'
-};
-
-const featureListStyle: React.CSSProperties = {
-  listStyle: 'none',
-  padding: 0,
-  margin: '0 0 2rem 0',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.75rem'
-};
-
-const featureItemStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  fontSize: '0.9375rem'
-};
-
-const recommendBadgeStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '-12px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  backgroundColor: 'var(--accent)',
-  color: 'var(--secondary)',
-  padding: '0.25rem 1rem',
-  borderRadius: '1rem',
-  fontSize: '0.75rem',
-  fontWeight: 800,
-  textTransform: 'uppercase'
-};
+const paymentIconStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', opacity: 0.8 };
+const planCardStyle: React.CSSProperties = { backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '2rem', boxShadow: 'var(--shadow)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', position: 'relative' };
+const featureListStyle: React.CSSProperties = { listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem', color: 'var(--text-main)' };
+const featureItemStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9375rem' };
 
 export default SubscriptionPage;

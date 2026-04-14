@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import { mockTalents, mockAgencies } from '../data/mock';
 import { MapPin, Trash2 } from 'lucide-react';
 
 const FavoritesPage: React.FC = () => {
   const { likes, toggleLike } = useUser();
+  const { t } = useLanguage();
 
   const favoriteTalents = mockTalents.filter(t => likes.includes(t.id));
   const favoriteAgencies = mockAgencies.filter(a => likes.includes(a.id));
@@ -14,11 +16,12 @@ const FavoritesPage: React.FC = () => {
     const isTalent = type === 'talent';
     return (
       <div key={item.id} style={{ 
-        backgroundColor: 'white', 
+        backgroundColor: 'var(--surface)', 
         borderRadius: 'var(--radius-md)', 
         overflow: 'hidden', 
         boxShadow: 'var(--shadow)',
-        position: 'relative'
+        position: 'relative',
+        border: '1px solid var(--border)'
       }}>
         <div style={{ position: 'relative', paddingTop: '100%' }}>
           <img 
@@ -32,27 +35,29 @@ const FavoritesPage: React.FC = () => {
               position: 'absolute', 
               top: '0.5rem', 
               right: '0.5rem', 
-              backgroundColor: 'white', 
+              backgroundColor: 'var(--surface)', 
               borderRadius: '50%', 
               padding: '0.5rem',
               color: 'var(--error)',
-              boxShadow: 'var(--shadow)'
+              boxShadow: 'var(--shadow)',
+              border: 'none',
+              cursor: 'pointer'
             }}
           >
             <Trash2 size={18} />
           </button>
         </div>
         <div style={{ padding: '0.75rem' }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{item.name}</h3>
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>{item.name}</h3>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
             <MapPin size={14} /> {isTalent ? item.region : item.location}
           </p>
           <Link 
             to={`/detail/${type}/${item.id}`} 
             className="btn btn-outline" 
-            style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+            style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem', textAlign: 'center', display: 'block', textDecoration: 'none' }}
           >
-            詳細を見る
+            {t('fav.view_detail')}
           </Link>
         </div>
       </div>
@@ -61,11 +66,11 @@ const FavoritesPage: React.FC = () => {
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: '2rem' }}>お気に入り一覧</h1>
+      <h1 style={{ fontSize: '1.5rem', marginBottom: '2rem', color: 'var(--text-main)' }}>{t('fav.title')}</h1>
 
       {favoriteTalents.length > 0 && (
         <section style={{ marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>志望者</h2>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--text-main)' }}>{t('fav.talent_section')}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1.5rem' }}>
             {favoriteTalents.map(t => renderCard(t, 'talent'))}
           </div>
@@ -74,7 +79,7 @@ const FavoritesPage: React.FC = () => {
 
       {favoriteAgencies.length > 0 && (
         <section style={{ marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>事務所</h2>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--text-main)' }}>{t('fav.agency_section')}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1.5rem' }}>
             {favoriteAgencies.map(a => renderCard(a, 'agency'))}
           </div>
@@ -83,7 +88,7 @@ const FavoritesPage: React.FC = () => {
 
       {likes.length === 0 && (
         <div style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--text-muted)' }}>
-          お気に入りはまだありません。
+          {t('fav.no_favs')}
         </div>
       )}
     </div>
