@@ -1,175 +1,161 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useUser } from '../context/UserContext';
-import { mockTalents, mockAgencies, GENRES } from '../data/mock';
-import { Search as SearchIcon, CheckCircle, Lock } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { Search, MapPin, Filter, Star, User, Users, Camera, Video, Music, Palette, Tv } from 'lucide-react';
+import type { Profile } from '../types';
 
 interface SearchPageProps {
   type: 'talent' | 'agency';
 }
 
 const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
-  const { currentUser, role } = useUser();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('');
-  const [minAge, setMinAge] = useState(0);
-  const [maxAge, setMaxAge] = useState(100);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedGenre, setSelectedGenre] = useState('すべて');
 
-  const isSearchingTalent = type === 'talent';
-  const data = isSearchingTalent ? mockTalents : mockAgencies;
+  const genres = type === 'talent' 
+    ? ['すべて', 'アイドル', 'モデル', '俳優', '歌手', 'ダンサー', 'インフルエンサー', '声優', 'クリエイター', 'ライバー']
+    : ['すべて', '芸能', 'モデル', '音楽', '俳優', 'インフルエンサー'];
 
-  // Plan-based restrictions for Agencies
-  const isAgencyFreePlan = role === 'agency' && (currentUser as any)?.plan === 'free';
+  const fetchUsers = async () => {
+    setLoading(true);
+    let q = supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', type);
 
-  const filteredData = data.filter(item => {
-    const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchGenre = selectedGenre === '' || item.genres.includes(selectedGenre as any);
-    const matchRegion = selectedRegion === '' || (isSearchingTalent ? (item as any).region : (item as any).location).includes(selectedRegion);
-    
-    if (isSearchingTalent && !isAgencyFreePlan) {
-      const talent = item as any;
-      const matchAge = talent.age >= minAge && talent.age <= maxAge;
-      return matchSearch && matchGenre && matchRegion && matchAge;
+    if (selectedGenre !== 'すべて') {
+      q = q.contains('genres', [selectedGenre]);
     }
-    
-    return matchSearch && matchGenre && matchRegion;
-  });
 
-  // Sorting: Premium/Enterprise/PRO plans first
-  const sortedData = [...filteredData].sort((a, b) => {
-    const getPriority = (item: any) => {
-      if (item.plan === 'enterprise' || item.plan === 'pro' || item.plan === 'premium') return 0;
-      if (item.plan === 'standard') return 1;
-      return 2;
-    };
-    return getPriority(a) - getPriority(b);
-  });
+    const { data, error } = await q.order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching users:', error);
+    } else {
+      setResults(data as Profile[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [type, selectedGenre]);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', type)
+      .ilike('full_name', `%${query}%`);
+
+    if (!error) {
+      setResults(data as Profile[]);
+    }
+    setLoading(false);
+  };
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--accent)' }}>
-        {isSearchingTalent ? '志望者を探す' : '事務所を探す'}
-      </h1>
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {type === 'talent' ? <Users size={32} /> : <User size={32} />}
+          {type === 'talent' ? '志望者を探す' : '事務所を探す'}
+        </h1>
 
-      {/* Search & Filter Bar */}
-      <div style={{ 
-        backgroundColor: 'var(--surface)', 
-        padding: '1.5rem', 
-        borderRadius: 'var(--radius-md)', 
-        border: '1px solid var(--border)',
-        marginBottom: '2rem'
-      }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-          <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
-            <SearchIcon size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input 
               type="text" 
-              placeholder="名前で検索..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 3rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'white' }}
+              placeholder={type === 'talent' ? "名前やキーワードで検索" : "事務所名で検索"}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', fontSize: '1rem' }}
             />
           </div>
-          
-          <select 
-            value={selectedGenre}
-            onChange={(e) => setSelectedGenre(e.target.value)}
-            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'white', minWidth: '150px' }}
-          >
-            <option value="">すべてのジャンル</option>
-            {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
+          <button type="submit" className="btn btn-primary" style={{ padding: '0 2rem' }}>検索</button>
+        </form>
 
-          <input 
-            type="text" 
-            placeholder="地域 (例: 東京)" 
-            value={selectedRegion}
-            onChange={(e) => setSelectedRegion(e.target.value)}
-            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'white', minWidth: '150px' }}
-          />
-
-          {isSearchingTalent && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isAgencyFreePlan ? 0.5 : 1, position: 'relative' }}>
-              <input 
-                type="number" 
-                placeholder="最小年齢" 
-                disabled={isAgencyFreePlan}
-                value={minAge || ''}
-                onChange={(e) => setMinAge(Number(e.target.value))}
-                style={{ width: '80px', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'white' }}
-              />
-              <span>〜</span>
-              <input 
-                type="number" 
-                placeholder="最大年齢" 
-                disabled={isAgencyFreePlan}
-                value={maxAge || ''}
-                onChange={(e) => setMaxAge(Number(e.target.value))}
-                style={{ width: '80px', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'white' }}
-              />
-              {isAgencyFreePlan && (
-                <Link to="/mypage" style={{ position: 'absolute', top: '-25px', right: 0, fontSize: '0.75rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <Lock size={12} /> プランをアップグレードしてフィルターを解除
-                </Link>
-              )}
-            </div>
-          )}
+        <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', whiteSpace: 'nowrap' }}>
+          {genres.map(genre => (
+            <button 
+              key={genre}
+              onClick={() => setSelectedGenre(genre)}
+              style={{
+                padding: '0.5rem 1.25rem',
+                borderRadius: '2rem',
+                border: '1px solid var(--border)',
+                backgroundColor: selectedGenre === genre ? 'var(--accent)' : 'var(--surface)',
+                color: selectedGenre === genre ? 'var(--secondary)' : 'var(--text-main)',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              {genre}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Grid Display */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
-        gap: '1.5rem' 
-      }}>
-        {sortedData.map(item => (
-          <div key={item.id} style={{ 
-            backgroundColor: 'var(--surface)', 
-            borderRadius: 'var(--radius-md)', 
-            overflow: 'hidden', 
-            border: (item.plan === 'enterprise' || item.plan === 'pro' || item.plan === 'premium') 
-              ? '1px solid var(--accent)' 
-              : '1px solid var(--border)',
-            boxShadow: (item.plan === 'enterprise' || item.plan === 'pro' || item.plan === 'premium') 
-              ? '0 0 15px rgba(212, 175, 55, 0.2)' 
-              : 'var(--shadow)',
-            position: 'relative'
-          }}>
-            {(item.plan === 'enterprise' || item.plan === 'pro' || item.plan === 'premium') && (
-              <div style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', backgroundColor: 'var(--accent)', color: 'var(--secondary)', fontSize: '0.65rem', fontWeight: 800, padding: '0.1rem 0.4rem', borderRadius: '0.2rem', zIndex: 1 }}>
-                PICK UP
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '5rem' }}>読み込み中...</div>
+      ) : results.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          {results.map(user => (
+            <Link key={user.id} to={`/detail/${type}/${user.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={cardStyle}>
+                <div style={{ position: 'relative' }}>
+                  <img 
+                    src={user.avatar_url || 'https://via.placeholder.com/300'} 
+                    alt={user.name} 
+                    style={{ width: '100%', height: '200px', objectFit: 'cover', borderBottom: '1px solid var(--border)' }} 
+                  />
+                  {user.photos?.length > 0 && (
+                    <div style={{ position: 'absolute', bottom: '0.5rem', right: '0.5rem', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Camera size={12} /> {user.photos.length}
+                    </div>
+                  )}
+                </div>
+                <div style={{ padding: '1.25rem' }}>
+                  <h3 style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>{user.full_name || user.name}</h3>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                    {user.genres?.slice(0, 3).map(g => (
+                      <span key={g} style={{ backgroundColor: 'var(--background)', fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border)' }}>{g}</span>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={14} /> {user.location || '不明'}</span>
+                    {user.age && <span>{user.age}歳</span>}
+                  </div>
+                </div>
               </div>
-            )}
-            <div style={{ position: 'relative', paddingTop: '100%' }}>
-              <img 
-                src={isSearchingTalent ? (item as any).icon : (item as any).logo} 
-                alt={item.name} 
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </div>
-            <div style={{ padding: '0.75rem', textAlign: 'center' }}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-                {item.name}
-                {(!isSearchingTalent && (item as any).isApproved) && <CheckCircle size={14} style={{ color: 'var(--accent)' }} />}
-              </h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                {isSearchingTalent ? `${(item as any).age}歳 / ${(item as any).region}` : (item as any).location}
-              </p>
-              <Link 
-                to={`/detail/${type}/${item.id}`} 
-                className="btn btn-primary" 
-                style={{ width: '100%', padding: '0.5rem', fontSize: '0.8rem' }}
-              >
-                詳細を見る
-              </Link>
-            </div>
-          </div>
-        ))}
-      </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div style={{ textAlign: 'center', padding: '5rem', backgroundColor: 'var(--surface)', borderRadius: '1rem', border: '1px dashed var(--border)' }}>
+          <p style={{ color: 'var(--text-muted)' }}>該当するユーザーが見つかりませんでした。</p>
+        </div>
+      )}
     </div>
   );
+};
+
+const cardStyle: React.CSSProperties = {
+  backgroundColor: 'var(--surface)',
+  borderRadius: 'var(--radius-lg)',
+  overflow: 'hidden',
+  boxShadow: 'var(--shadow)',
+  border: '1px solid var(--border)',
+  transition: 'transform 0.2s',
+  cursor: 'pointer',
+  height: '100%'
 };
 
 export default SearchPage;

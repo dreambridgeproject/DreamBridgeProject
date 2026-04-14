@@ -2,50 +2,41 @@ export type UserRole = 'talent' | 'agency';
 
 export type Genre = 'アイドル' | 'モデル' | '俳優' | '歌手' | '声優' | 'ダンサー' | 'インフルエンサー' | 'クリエイター' | 'ライバー';
 
-export type AgencyPlan = 'free' | 'standard' | 'pro' | 'enterprise';
-export type TalentPlan = 'free' | 'premium';
-
-export interface Talent {
+export interface Profile {
   id: string;
-  role: 'talent';
   name: string;
-  icon: string;
-  age: number;
-  region: string;
-  skills: string[];
-  experience: string;
-  genres: Genre[];
-  intro: string;
-  snsLinks: { platform: string; url: string }[];
-  videoUrl?: string;
-  plan: TalentPlan; // Added
+  full_name?: string;
+  avatar_url?: string;
+  role: UserRole;
+  bio?: string;
+  location?: string;
+  age?: number;
+  height?: number;
+  weight?: number;
+  genres: string[];
+  hobbies?: string;
+  skills?: string;
+  website_url?: string;
+  instagram_url?: string;
+  x_url?: string;
+  photos: string[];
+  videos: string[];
+  audios: string[];
+  plan: 'free' | 'standard' | 'pro' | 'enterprise' | 'premium';
+  verificationStatus: 'none' | 'reviewing' | 'verified';
+  blockedUserIds: string[];
 }
 
-export interface Agency {
-  id: string;
-  role: 'agency';
-  name: string;
-  logo: string;
-  genres: Genre[];
-  location: string;
-  foundedYear: number;
-  talentCount: number;
-  intro: string;
-  websiteUrl: string;
-  snsLinks: { platform: string; url: string }[];
-  plan: AgencyPlan; // Added
-  isApproved: boolean; // Added (Admin approval)
-  auditions?: { title: string; description: string; deadline: string }[]; // For Enterprise
-}
-
-export type OfferStatus = 'pending' | 'approved' | 'declined';
+// Backward compatibility for existing components
+export type Talent = Profile;
+export type Agency = Profile;
 
 export interface Offer {
   id: string;
   senderId: string;
   receiverId: string;
   senderRole: UserRole;
-  status: OfferStatus;
+  status: 'pending' | 'approved' | 'declined';
   timestamp: string;
   lastMessage?: string;
 }
@@ -62,7 +53,7 @@ export interface ChatMessage {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'offer_received' | 'offer_approved' | 'offer_declined';
+  type: 'offer_received' | 'offer_approved' | 'offer_declined' | 'new_message';
   title: string;
   message: string;
   link: string;

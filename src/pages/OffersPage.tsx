@@ -93,17 +93,16 @@ const OffersPage: React.FC = () => {
   };
 
   return (
-    <div className="container" style={{ padding: '2rem 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>オファー管理</h1>
-
-      <div style={{ display: 'flex', borderBottom: '2px solid var(--border)', marginBottom: '2rem' }}>
+    <div style={{ paddingBottom: '2rem' }}>
+      <div style={{ display: 'flex', borderBottom: '2px solid var(--border)', marginBottom: '1.5rem' }}>
         <button 
           onClick={() => setActiveTab('received')}
           style={{ 
             flex: 1, 
-            padding: '1rem', 
+            padding: '0.75rem', 
             background: 'none', 
-            fontWeight: 600,
+            fontWeight: 700,
+            fontSize: '0.875rem',
             color: activeTab === 'received' ? 'var(--primary)' : 'var(--text-muted)',
             borderBottom: activeTab === 'received' ? '2px solid var(--primary)' : 'none',
             marginBottom: '-2px'
@@ -115,9 +114,10 @@ const OffersPage: React.FC = () => {
           onClick={() => setActiveTab('sent')}
           style={{ 
             flex: 1, 
-            padding: '1rem', 
+            padding: '0.75rem', 
             background: 'none', 
-            fontWeight: 600,
+            fontWeight: 700,
+            fontSize: '0.875rem',
             color: activeTab === 'sent' ? 'var(--primary)' : 'var(--text-muted)',
             borderBottom: activeTab === 'sent' ? '2px solid var(--primary)' : 'none',
             marginBottom: '-2px'

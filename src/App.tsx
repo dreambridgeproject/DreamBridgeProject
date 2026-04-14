@@ -11,14 +11,20 @@ import OffersPage from './pages/OffersPage';
 import ChatPage from './pages/ChatPage';
 import FavoritesPage from './pages/FavoritesPage';
 import NotificationsPage from './pages/NotificationsPage';
+import SubscriptionPage from './pages/SubscriptionPage';
+import PaymentSettingsPage from './pages/PaymentSettingsPage';
+import VerificationPage from './pages/VerificationPage';
+import AdminDashboard from './pages/AdminDashboard';
+import LegalPage from './pages/LegalPage';
+import QuickAccessPopup from './components/QuickAccessPopup';
 
 function App() {
   return (
     <UserProvider>
       <Router>
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--background)' }}>
           <Header />
-          <main style={{ flex: 1, paddingBottom: '70px' }}>
+          <main style={{ flex: 1, paddingBottom: '90px' }}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
@@ -32,8 +38,15 @@ function App() {
               <Route path="/chat/:offerId" element={<ChatPage />} />
               <Route path="/favorites" element={<FavoritesPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/subscription" element={<SubscriptionPage />} />
+              <Route path="/payment-settings" element={<PaymentSettingsPage />} />
+              <Route path="/verification" element={<VerificationPage />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/legal" element={<LegalPage />} />
             </Routes>
           </main>
+          {/* Always show bottom nav for logged in users, QuickAccess for utility */}
+          <QuickAccessPopup />
           <BottomNav />
         </div>
       </Router>

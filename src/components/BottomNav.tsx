@@ -6,9 +6,9 @@ import { useUser } from '../context/UserContext';
 const BottomNav: React.FC = () => {
   const { currentUser, role } = useUser();
 
-  if (!currentUser) return null;
-
-  const searchPath = role === 'talent' ? '/search/agencies' : '/search/talent';
+  // Show navigation always to ensure user can find legal pages or login
+  // But content depends on role
+  const searchPath = role === 'agency' ? '/search/talent' : '/search/agencies';
 
   return (
     <nav style={{
@@ -16,13 +16,13 @@ const BottomNav: React.FC = () => {
       bottom: 0,
       left: 0,
       right: 0,
-      backgroundColor: 'rgba(2, 6, 23, 0.95)',
-      backdropFilter: 'blur(10px)',
+      backgroundColor: 'rgba(2, 6, 23, 0.98)',
+      backdropFilter: 'blur(15px)',
       borderTop: '1px solid var(--border)',
       display: 'flex',
       justifyContent: 'space-around',
       alignItems: 'center',
-      padding: '0.75rem 0 1.5rem 0',
+      padding: '0.75rem 0 1.25rem 0',
       zIndex: 1000,
       boxShadow: '0 -4px 20px rgba(0,0,0,0.5)'
     }}>
@@ -36,10 +36,11 @@ const BottomNav: React.FC = () => {
           color: isActive ? 'var(--accent)' : 'var(--text-muted)',
           fontSize: '0.7rem',
           fontWeight: isActive ? '700' : '500',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          textDecoration: 'none'
         })}
       >
-        <Search size={22} style={{ marginBottom: '2px' }} />
+        <Search size={22} />
         <span>探す</span>
       </NavLink>
       <NavLink 
@@ -52,14 +53,15 @@ const BottomNav: React.FC = () => {
           color: isActive ? 'var(--accent)' : 'var(--text-muted)',
           fontSize: '0.7rem',
           fontWeight: isActive ? '700' : '500',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          textDecoration: 'none'
         })}
       >
-        <Heart size={22} style={{ marginBottom: '2px' }} />
+        <Heart size={22} />
         <span>お気に入り</span>
       </NavLink>
       <NavLink 
-        to="/offers" 
+        to="/chat" 
         style={({ isActive }) => ({
           display: 'flex',
           flexDirection: 'column',
@@ -68,11 +70,12 @@ const BottomNav: React.FC = () => {
           color: isActive ? 'var(--accent)' : 'var(--text-muted)',
           fontSize: '0.7rem',
           fontWeight: isActive ? '700' : '500',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          textDecoration: 'none'
         })}
       >
-        <MessageSquare size={22} style={{ marginBottom: '2px' }} />
-        <span>オファー</span>
+        <MessageSquare size={22} />
+        <span>チャット</span>
       </NavLink>
       <NavLink 
         to="/mypage" 
@@ -84,10 +87,11 @@ const BottomNav: React.FC = () => {
           color: isActive ? 'var(--accent)' : 'var(--text-muted)',
           fontSize: '0.7rem',
           fontWeight: isActive ? '700' : '500',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          textDecoration: 'none'
         })}
       >
-        <User size={22} style={{ marginBottom: '2px' }} />
+        <User size={22} />
         <span>マイページ</span>
       </NavLink>
     </nav>
