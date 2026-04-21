@@ -7,10 +7,12 @@ import {
 } from 'lucide-react';
 
 const QuickAccessPopup: React.FC = () => {
-  const { currentUser } = useUser();
+  const { currentUser, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
 
   if (!currentUser) return null;
+
+  const isAdmin = user?.email === 'admin@dreambridge.jp' || user?.email?.includes('admin@');
 
   const planName = currentUser.plan === 'free' ? '無料' : 
                    currentUser.plan === 'premium' ? 'プレミアム' :
@@ -80,14 +82,16 @@ const QuickAccessPopup: React.FC = () => {
               </div>
             </Link>
 
-            {/* Admin Dashboard (Temporary) */}
-            <Link to="/admin" onClick={() => setIsOpen(false)} style={{ ...menuItemStyle, border: '1px dashed var(--accent)' }}>
-              <div style={iconBoxStyle}><ShieldCheck size={18} color="var(--accent)" /></div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--accent)' }}>[運営] 申請を管理する</p>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>事務所の認証審査</p>
-              </div>
-            </Link>
+            {/* Admin Dashboard */}
+            {isAdmin && (
+              <Link to="/admin" onClick={() => setIsOpen(false)} style={{ ...menuItemStyle, border: '1px dashed var(--accent)' }}>
+                <div style={iconBoxStyle}><ShieldCheck size={18} color="var(--accent)" /></div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--accent)' }}>[運営] 申請を管理する</p>
+                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>事務所の認証審査</p>
+                </div>
+              </Link>
+            )}
           </div>
         </div>
       )}

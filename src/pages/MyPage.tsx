@@ -51,6 +51,8 @@ const MyPage: React.FC = () => {
     return null; // Return null instead of navigating during render
   }
 
+  const isAdmin = user?.email === 'admin@dreambridge.jp' || user?.email?.includes('admin@');
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -177,7 +179,7 @@ const MyPage: React.FC = () => {
             <span style={{ color: 'var(--accent)' }}>{t('mypage.plan_mgmt')}</span>
           </button>
         )}
-        {(user?.email === 'admin@dreambridge.jp' || user?.email?.includes('admin')) && (
+        {isAdmin && (
           <button 
             onClick={() => navigate('/admin')}
             style={{ ...quickLinkStyle, border: '1px solid #ef4444', background: 'rgba(239, 68, 68, 0.1)' }}
