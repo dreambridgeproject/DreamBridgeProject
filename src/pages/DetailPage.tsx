@@ -17,6 +17,13 @@ const DetailPage: React.FC = () => {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -120,7 +127,7 @@ const DetailPage: React.FC = () => {
         </div>
 
         {/* Right: Profile Details */}
-        <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '2rem', boxShadow: 'var(--shadow)', border: '1px solid var(--border)', color: 'var(--text-main)' }}>
+        <div style={{ flex: 1, backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '2rem', boxShadow: 'var(--shadow)', border: '1px solid var(--border)', color: 'var(--text-main)', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <h1 style={{ fontSize: '2rem' }}>{profile.full_name || profile.name}</h1>
             {profile.verificationStatus === 'verified' && <ShieldCheck size={24} style={{ color: 'var(--accent)' }} />}
@@ -146,9 +153,14 @@ const DetailPage: React.FC = () => {
             {isTalentDetail && (
               <section>
                 <h2 style={sectionTitleStyle}>{t('detail.specs_title')}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+                  gap: '1.5rem' 
+                }}>
                   {profile.age && <div><label style={labelStyle}>{t('detail.age')}</label><p style={valueStyle}>{profile.age}{t('mypage.age')}</p></div>}
                   {profile.height && <div><label style={labelStyle}>{t('detail.height')}</label><p style={valueStyle}>{profile.height}{t('mypage.height')}</p></div>}
+                  {profile.weight && <div><label style={labelStyle}>{t('detail.weight')}</label><p style={valueStyle}>{profile.weight}{t('mypage.weight')}</p></div>}
                   {profile.hobbies && <div><label style={labelStyle}>{t('detail.hobbies')}</label><p style={valueStyle}>{profile.hobbies}</p></div>}
                   {profile.skills && <div><label style={labelStyle}>{t('detail.skills')}</label><p style={valueStyle}>{profile.skills}</p></div>}
                 </div>
@@ -241,24 +253,6 @@ const snsButtonStyle: React.CSSProperties = {
   padding: '0.75rem 1.25rem', 
   borderRadius: 'var(--radius-sm)', 
   backgroundColor: 'var(--background)', 
-  border: '1px solid var(--border)', 
-  color: 'var(--text-main)', 
-  textDecoration: 'none',
-  fontSize: '0.9375rem',
-  fontWeight: 600
-};
-
-export default DetailPage;
-kgroundColor: 'var(--background)', 
-  border: '1px solid var(--border)', 
-  color: 'var(--text-main)', 
-  textDecoration: 'none',
-  fontSize: '0.9375rem',
-  fontWeight: 600
-};
-
-export default DetailPage;
-ound)', 
   border: '1px solid var(--border)', 
   color: 'var(--text-main)', 
   textDecoration: 'none',
