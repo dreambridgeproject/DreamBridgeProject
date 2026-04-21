@@ -33,6 +33,8 @@ const translations: Record<Language, Record<string, string>> = {
     'landing.features.secure.desc': '厳格な審査を通過した事務所のみが掲載。本人確認も徹底。',
     'auth.title_login': 'ログイン',
     'auth.title_signup': '新規登録',
+    'auth.login': 'ログイン',
+    'auth.signup': '新規登録',
     'auth.talent_signup': '志望者登録',
     'auth.agency_signup': '事務所登録',
     'auth.email': 'メールアドレス',

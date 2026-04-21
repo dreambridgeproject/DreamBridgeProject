@@ -94,7 +94,7 @@ const Header: React.FC = () => {
           </nav>
         ) : (
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', borderRadius: '2rem' }}>{t('auth.login')}</Link>
+            <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', borderRadius: '2rem' }}>{t('auth.login_btn')}</Link>
           </div>
         )}
       </div>
