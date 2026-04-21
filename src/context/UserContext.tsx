@@ -40,7 +40,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     try {
       // Add a simple timeout to the supabase query
       const profilePromise = supabase.from('profiles').select('*').eq('id', userId).single();
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Profile fetch timeout')), 10000));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Profile fetch timeout')), 30000));
       
       const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
       
@@ -58,8 +58,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
           videos: [],
           audios: [],
           plan: 'free',
-          verificationStatus: 'none',
-          blockedUserIds: []
+          verificationStatus: 'none'
         };
         
         const { data: createdData, error: createError } = await supabase
