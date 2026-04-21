@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { 
-  PlusCircle, CreditCard, ShieldCheck, FileText, 
-  X, ChevronUp, Bell, ShieldAlert
+  PlusCircle, CreditCard, ShieldCheck, 
+  X, ShieldAlert
 } from 'lucide-react';
 
 const QuickAccessPopup: React.FC = () => {
-  const { currentUser, role } = useUser();
+  const { currentUser } = useUser();
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
 
   if (!currentUser) return null;
 
-  const isTalent = role === 'talent';
   const planName = currentUser.plan === 'free' ? '無料' : 
                    currentUser.plan === 'premium' ? 'プレミアム' :
                    currentUser.plan === 'standard' ? 'スタンダード' : 

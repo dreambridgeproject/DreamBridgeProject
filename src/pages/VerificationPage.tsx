@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 import { 
-  ShieldCheck, FileText, Upload, CheckCircle2, 
+  FileText, Upload, CheckCircle2, 
   ChevronRight, AlertCircle, Building2, User, CreditCard
 } from 'lucide-react';
 

@@ -1,13 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { 
-  LogOut, Edit, MapPin, Search, BarChart3, Star, 
-  ShieldCheck, ShieldAlert, ClipboardList, MessageSquare, 
-  Image, Video, Music, Shield, UserCheck, Users, 
-  CreditCard, ExternalLink, AlertTriangle, Ghost, Save, X, Camera, Plus, Trash2, Instagram, Twitter
+  LogOut, Edit, MapPin, Search, Star, MessageSquare,
+  Image, Shield, 
+  CreditCard, ExternalLink, Save, X, Camera, Plus, Trash2, Instagram, Twitter
 } from 'lucide-react';
 
 const MyPage: React.FC = () => {

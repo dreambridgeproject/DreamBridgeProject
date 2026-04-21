@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../context/LanguageContext';
-import { Search, MapPin, Filter, Star, User, Users, Camera, Video, Music, Palette, Tv } from 'lucide-react';
+import { Search, MapPin, User, Users, Camera } from 'lucide-react';
 import type { Profile } from '../types';
 
 interface SearchPageProps {

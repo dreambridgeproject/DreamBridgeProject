@@ -4,8 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import type { Profile } from '../types';
 import { 
   ShieldCheck, ShieldAlert, Check, X, 
-  ExternalLink, Building2, Search,
-  Calendar, Eye, RefreshCcw, User
+  RefreshCcw
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {

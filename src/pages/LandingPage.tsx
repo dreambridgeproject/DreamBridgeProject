@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { 
-  Users, Building2, Star, ShieldCheck, Zap, 
+  Star, ShieldCheck, Zap, 
   MessageSquare, ChevronRight, Play, Camera, Tv, Palette, Mic2
 } from 'lucide-react';
 // Dramatic night shot of Tower Bridge glowing with golden lights

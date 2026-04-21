@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { 
-  CreditCard, Building2, Smartphone, Store, 
-  CheckCircle2, Plus, ChevronRight, AlertCircle,
+  CreditCard, Building2, Store, 
+  Plus, ChevronRight, AlertCircle,
   SmartphoneNfc, Zap
 } from 'lucide-react';
 

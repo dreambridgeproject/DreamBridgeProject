@@ -5,12 +5,12 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types';
 import { 
-  Heart, MapPin, ExternalLink, ChevronLeft, ShieldCheck, 
-  ShieldAlert, Lock, Image, Video, Music, Instagram, Twitter, MessageSquare
+  Heart, MapPin, ChevronLeft, ShieldCheck, 
+  Lock, Image, Video, Music, Instagram, Twitter
 } from 'lucide-react';
 
 const DetailPage: React.FC = () => {
-  const { type, id } = useParams<{ type: 'talent' | 'agency'; id: string }>();
+  const { id } = useParams<{ type: 'talent' | 'agency'; id: string }>();
   const { currentUser, role, likes, toggleLike, sendOffer, offers } = useUser();
   const { t } = useLanguage();
   const navigate = useNavigate();

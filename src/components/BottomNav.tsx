@@ -5,7 +5,7 @@ import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 
 const BottomNav: React.FC = () => {
-  const { currentUser, role } = useUser();
+  const { role } = useUser();
   const { t } = useLanguage();
 
   // Show navigation always to ensure user can find legal pages or login
