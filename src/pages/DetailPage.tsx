@@ -214,12 +214,12 @@ const DetailPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   {profile.instagram_url && (
                     <a href={`https://instagram.com/${profile.instagram_url}`} target="_blank" rel="noreferrer" style={snsButtonStyle}>
-                      <Instagram size={20} /> Instagram
+                      <Instagram size={20} /> {t('detail.sns_instagram')}
                     </a>
                   )}
                   {profile.x_url && (
                     <a href={`https://twitter.com/${profile.x_url}`} target="_blank" rel="noreferrer" style={snsButtonStyle}>
-                      <Twitter size={20} /> X (Twitter)
+                      <Twitter size={20} /> {t('detail.sns_x')}
                     </a>
                   )}
                 </div>

@@ -214,18 +214,18 @@ const MyPage: React.FC = () => {
                 {isEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '500px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <input type="text" placeholder={isTalent ? "Full Name" : "Agency Name"} value={editData.full_name} onChange={e => setEditData({...editData, full_name: e.target.value})} style={inputStyle} />
-                      <input type="text" placeholder={isTalent ? "Location" : "Headquarters"} value={editData.location} onChange={e => setEditData({...editData, location: e.target.value})} style={inputStyle} />
+                      <input type="text" placeholder={isTalent ? t('mypage.full_name') : t('mypage.agency_name')} value={editData.full_name} onChange={e => setEditData({...editData, full_name: e.target.value})} style={inputStyle} />
+                      <input type="text" placeholder={isTalent ? t('mypage.location_label') : t('mypage.hq_label')} value={editData.location} onChange={e => setEditData({...editData, location: e.target.value})} style={inputStyle} />
                     </div>
                     {isTalent && (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                        <input type="number" placeholder="Age" value={editData.age} onChange={e => setEditData({...editData, age: e.target.value})} style={inputStyle} />
-                        <input type="number" placeholder="Height" value={editData.height} onChange={e => setEditData({...editData, height: e.target.value})} style={inputStyle} />
-                        <input type="number" placeholder="Weight" value={editData.weight} onChange={e => setEditData({...editData, weight: e.target.value})} style={inputStyle} />
+                        <input type="number" placeholder={t('detail.age')} value={editData.age} onChange={e => setEditData({...editData, age: e.target.value})} style={inputStyle} />
+                        <input type="number" placeholder={t('detail.height')} value={editData.height} onChange={e => setEditData({...editData, height: e.target.value})} style={inputStyle} />
+                        <input type="number" placeholder={t('detail.weight')} value={editData.weight} onChange={e => setEditData({...editData, weight: e.target.value})} style={inputStyle} />
                       </div>
                     )}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.5rem', backgroundColor: 'var(--background)', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.75rem', width: '100%', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Genres:</span>
+                      <span style={{ fontSize: '0.75rem', width: '100%', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{t('mypage.genres')}:</span>
                       {genreOptions.map(genre => (
                         <label key={genre} style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>
                           <input 
@@ -241,13 +241,13 @@ const MyPage: React.FC = () => {
                     </div>
                     {isTalent ? (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <input type="text" placeholder="Hobbies" value={editData.hobbies} onChange={e => setEditData({...editData, hobbies: e.target.value})} style={inputStyle} />
-                        <input type="text" placeholder="Skills" value={editData.skills} onChange={e => setEditData({...editData, skills: e.target.value})} style={inputStyle} />
+                        <input type="text" placeholder={t('detail.hobbies')} value={editData.hobbies} onChange={e => setEditData({...editData, hobbies: e.target.value})} style={inputStyle} />
+                        <input type="text" placeholder={t('detail.skills')} value={editData.skills} onChange={e => setEditData({...editData, skills: e.target.value})} style={inputStyle} />
                       </div>
                     ) : (
-                      <input type="url" placeholder="Official Website URL" value={(editData as any).website_url || ''} onChange={e => setEditData({...editData, website_url: e.target.value} as any)} style={inputStyle} />
+                      <input type="url" placeholder={t('mypage.website_url')} value={(editData as any).website_url || ''} onChange={e => setEditData({...editData, website_url: e.target.value} as any)} style={inputStyle} />
                     )}
-                    <textarea placeholder={isTalent ? "Bio / Motivation" : "Agency description / Requirements"} value={editData.bio} onChange={e => setEditData({...editData, bio: e.target.value})} style={{ ...inputStyle, minHeight: '120px' }} />
+                    <textarea placeholder={isTalent ? t('mypage.bio_placeholder_talent') : t('mypage.bio_placeholder_agency')} value={editData.bio} onChange={e => setEditData({...editData, bio: e.target.value})} style={{ ...inputStyle, minHeight: '120px' }} />
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Instagram size={18} /><input type="text" placeholder="Instagram ID" value={editData.instagram_url} onChange={e => setEditData({...editData, instagram_url: e.target.value})} style={inputStyle} /></div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Twitter size={18} /><input type="text" placeholder="X ID" value={editData.x_url} onChange={e => setEditData({...editData, x_url: e.target.value})} style={inputStyle} /></div>
@@ -255,7 +255,7 @@ const MyPage: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem', textAlign: window.innerWidth < 768 ? 'center' : 'left' }}>{currentUser?.full_name || currentUser?.name || 'No Name'}</h1>
+                    <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem', textAlign: window.innerWidth < 768 ? 'center' : 'left' }}>{currentUser?.full_name || currentUser?.name || t('mypage.no_name')}</h1>
                     <div style={{ 
                       display: 'flex', 
                       flexWrap: 'wrap', 
@@ -265,7 +265,7 @@ const MyPage: React.FC = () => {
                       marginBottom: '1rem',
                       justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
                     }}>
-                      <span><MapPin size={14} /> {currentUser?.location || 'Not set'}</span>
+                      <span><MapPin size={14} /> {currentUser?.location || t('mypage.not_set')}</span>
                       {isTalent && currentUser?.age && <span>{currentUser.age}{t('mypage.age')}</span>}
                       {isTalent && currentUser?.height && <span>{currentUser.height}{t('mypage.height')}</span>}
                       {isTalent && currentUser?.weight && <span>{currentUser.weight}{t('mypage.weight')}</span>}
