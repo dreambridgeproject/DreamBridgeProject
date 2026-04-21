@@ -304,6 +304,7 @@ const translations: Record<Language, Record<string, string>> = {
     'mypage.location': 'Location',
     'mypage.age': 'years old',
     'mypage.height': 'cm',
+    'mypage.weight': 'kg',
     'mypage.official_site': 'Official Site',
     'mypage.no_bio': 'No introduction text',
     'mypage.loading': 'Loading...',
@@ -342,4 +343,6 @@ export const useLanguage = () => {
     throw new Error('useLanguage must be used within a LanguageProvider');
   }
   return context;
+};
+
 };

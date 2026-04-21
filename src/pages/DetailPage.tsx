@@ -67,9 +67,14 @@ const DetailPage: React.FC = () => {
         <ChevronLeft size={20} /> {t('detail.back')}
       </button>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row', 
+        gap: '2.5rem',
+        alignItems: 'flex-start'
+      }}>
         {/* Left: Main Image & Actions */}
-        <div>
+        <div style={{ width: isMobile ? '100%' : '400px', flexShrink: 0 }}>
           <div style={{ position: 'relative', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
             <img 
               src={profile.avatar_url || 'https://via.placeholder.com/400'} 
@@ -226,7 +231,7 @@ const sectionTitleStyle: React.CSSProperties = {
   gap: '0.5rem'
 };
 
-const labelStyle: React.CSSProperties = { fontSize: '0.75rem', color: 'var(--text-muted)' };
+const labelStyle: React.CSSProperties = { fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem', whiteSpace: 'nowrap' };
 const valueStyle: React.CSSProperties = { fontSize: '1rem', fontWeight: 600 };
 const mediaSubTitleStyle: React.CSSProperties = { fontSize: '0.875rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' };
 const snsButtonStyle: React.CSSProperties = { 
@@ -236,6 +241,24 @@ const snsButtonStyle: React.CSSProperties = {
   padding: '0.75rem 1.25rem', 
   borderRadius: 'var(--radius-sm)', 
   backgroundColor: 'var(--background)', 
+  border: '1px solid var(--border)', 
+  color: 'var(--text-main)', 
+  textDecoration: 'none',
+  fontSize: '0.9375rem',
+  fontWeight: 600
+};
+
+export default DetailPage;
+kgroundColor: 'var(--background)', 
+  border: '1px solid var(--border)', 
+  color: 'var(--text-main)', 
+  textDecoration: 'none',
+  fontSize: '0.9375rem',
+  fontWeight: 600
+};
+
+export default DetailPage;
+ound)', 
   border: '1px solid var(--border)', 
   color: 'var(--text-main)', 
   textDecoration: 'none',

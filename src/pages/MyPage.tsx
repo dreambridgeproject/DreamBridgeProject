@@ -189,9 +189,14 @@ const MyPage: React.FC = () => {
       </div>
 
       {/* Profile Header */}
-      <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '2rem', boxShadow: 'var(--shadow)', marginBottom: '2rem', border: '1px solid var(--border)', position: 'relative' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'flex-start' }}>
-          <div style={{ position: 'relative' }}>
+      <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: 'clamp(1rem, 5vw, 2rem)', boxShadow: 'var(--shadow)', marginBottom: '2rem', border: '1px solid var(--border)', position: 'relative' }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+          gap: '2rem', 
+          alignItems: window.innerWidth < 768 ? 'center' : 'flex-start' 
+        }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{ width: '120px', height: '120px', borderRadius: isTalent ? '50%' : 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--background)', border: '4px solid var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {currentUser?.avatar_url ? (
                 <img src={currentUser.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -203,7 +208,7 @@ const MyPage: React.FC = () => {
             <input type="file" ref={avatarInputRef} onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'avatars', 'avatar_url')} accept="image/*" style={{ display: 'none' }} />
           </div>
 
-          <div style={{ flex: 1, minWidth: '250px' }}>
+          <div style={{ flex: 1, minWidth: '250px', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ width: '100%' }}>
                 {isEditing ? (
@@ -250,11 +255,20 @@ const MyPage: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>{currentUser?.full_name || currentUser?.name || 'No Name'}</h1>
-                    <div style={{ display: 'flex', gap: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                    <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem', textAlign: window.innerWidth < 768 ? 'center' : 'left' }}>{currentUser?.full_name || currentUser?.name || 'No Name'}</h1>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      gap: '1rem', 
+                      color: 'var(--text-muted)', 
+                      fontSize: '0.875rem', 
+                      marginBottom: '1rem',
+                      justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start'
+                    }}>
                       <span><MapPin size={14} /> {currentUser?.location || 'Not set'}</span>
                       {isTalent && currentUser?.age && <span>{currentUser.age}{t('mypage.age')}</span>}
                       {isTalent && currentUser?.height && <span>{currentUser.height}{t('mypage.height')}</span>}
+                      {isTalent && currentUser?.weight && <span>{currentUser.weight}{t('mypage.weight')}</span>}
                       {isAgency && currentUser?.website_url && (
                         <a href={currentUser.website_url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           <ExternalLink size={14} /> {t('mypage.official_site')}

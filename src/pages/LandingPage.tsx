@@ -66,9 +66,13 @@ const LandingPage: React.FC = () => {
             lineHeight: 1.6,
             padding: '0 1rem',
             textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-            fontWeight: 500
+            fontWeight: 500,
+            wordBreak: language === 'ja' ? 'keep-all' : 'normal',
+            overflowWrap: 'anywhere'
           }}>
-            {t('landing.hero.subtitle')}
+            {language === 'ja' ? (
+              <>志望者・ライバー・クリエイターと<br />事務所が直接つながる、<br />次世代のマッチングプラットフォーム</>
+            ) : t('landing.hero.subtitle')}
           </p>          <div style={{ 
             display: 'flex', 
             gap: '1rem', 
