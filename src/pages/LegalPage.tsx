@@ -30,38 +30,38 @@ const LegalPage: React.FC = () => {
         <div style={{ lineHeight: 1.8, color: 'var(--text-main)', fontSize: '0.9rem' }}>
           {language === 'ja' ? (
             <>
-              <p>この利用規約（以下「本規約」）は、DreamBridge運営事務局（以下「当事務局」）が提供するサービス「DreamBridge」（以下「本サービス」）の利用条件を定めるものです。登録ユーザーの皆さまには、本規約に従って本サービスをご利用いただきます。</p>
+              <p>この利用規約（以下「本規約」）は、DreamBridge（以下「当サービス」）が提供するサービス「DreamBridge」の利用条件を定めるものです。登録ユーザーの皆さまには、本規約に従って本サービスをご利用いただきます。</p>
               <h3 style={h3Style}>第1条（適用）</h3>
-              <p>本規約は、ユーザーと当事務局との間の本サービスの利用に関わる一切の関係に適用されるものとします。</p>
+              <p>本規約は、ユーザーとDreamBridgeとの間の本サービスの利用に関わる一切の関係に適用されるものとします。</p>
               <h3 style={h3Style}>第2条（利用登録）</h3>
-              <p>登録希望者が当事務局の定める方法によって利用登録を申請し、当事務局がこれを承認することによって、利用登録が完了するものとします。</p>
+              <p>登録希望者がDreamBridgeの定める方法によって利用登録を申請し、DreamBridgeがこれを承認することによって、利用登録が完了するものとします。</p>
               <h3 style={h3Style}>第3条（禁止事項）</h3>
               <p>ユーザーは、本サービスの利用にあたり、以下の行為をしてはなりません。</p>
               <ul>
                 <li>法令または公序良俗に違反する行為</li>
                 <li>犯罪行為に関連する行為</li>
                 <li>本サービスの内容等、本サービスに含まれる著作権、商標権ほか知的財産権を侵害する行為</li>
-                <li>当事務局、ほかのユーザー、またはその他第三者のサーバーまたはネットワークの機能を破壊したり、妨害したりする行為</li>
+                <li>DreamBridge、ほかのユーザー、またはその他第三者のサーバーまたはネットワークの機能を破壊したり、妨害したりする行為</li>
                 <li>本サービスによって得られた情報を商業的に利用する行為</li>
-                <li>その他、当事務局が不適切と判断する行為</li>
+                <li>その他、DreamBridgeが不適切と判断する行為</li>
               </ul>
             </>
           ) : (
             <>
-              <p>These Terms of Service (the "Terms") set forth the conditions for the use of the "DreamBridge" service (the "Service") provided by the DreamBridge Administration Office. Registered users shall use the Service in accordance with these Terms.</p>
+              <p>These Terms of Service (the "Terms") set forth the conditions for the use of the "DreamBridge" service (the "Service") provided by DreamBridge. Registered users shall use the Service in accordance with these Terms.</p>
               <h3 style={h3Style}>Article 1 (Application)</h3>
-              <p>These Terms apply to all relationships between users and the Office regarding the use of the Service.</p>
+              <p>These Terms apply to all relationships between users and DreamBridge regarding the use of the Service.</p>
               <h3 style={h3Style}>Article 2 (Registration)</h3>
-              <p>Registration is completed when an applicant applies for registration by the method prescribed by the Office and the Office approves the application.</p>
+              <p>Registration is completed when an applicant applies for registration by the method prescribed by DreamBridge and DreamBridge approves the application.</p>
               <h3 style={h3Style}>Article 3 (Prohibited Actions)</h3>
               <p>In using the Service, users shall not engage in any of the following acts:</p>
               <ul>
                 <li>Acts that violate laws or public order and morals</li>
                 <li>Acts related to criminal activities</li>
                 <li>Acts that infringe on copyrights, trademarks, or other intellectual property rights</li>
-                <li>Acts that destroy or interfere with the functions of the Office's or third parties' servers or networks</li>
+                <li>Acts that destroy or interfere with the functions of DreamBridge's or third parties' servers or networks</li>
                 <li>Commercial use of information obtained through the Service</li>
-                <li>Other acts deemed inappropriate by the Office</li>
+                <li>Other acts deemed inappropriate by DreamBridge</li>
               </ul>
             </>
           )}
@@ -79,7 +79,7 @@ const LegalPage: React.FC = () => {
           <tbody>
             <tr>
               <th style={thStyle}>{language === 'ja' ? '運営主体' : 'Operator'}</th>
-              <td style={tdStyle}>DreamBridge Administration Office</td>
+              <td style={tdStyle}>DreamBridge</td>
             </tr>
             <tr>
               <th style={thStyle}>{language === 'ja' ? 'お問い合わせ' : 'Contact'}</th>
@@ -98,17 +98,17 @@ const LegalPage: React.FC = () => {
         <div style={{ lineHeight: 1.8, color: 'var(--text-main)' }}>
           {language === 'ja' ? (
             <>
-              <p>株式会社ドリームブリッジ（以下「当社」）は、本サービスにおいてユーザーの個人情報の取り扱いについて、以下の通りプライバシーポリシーを定めます。</p>
+              <p>DreamBridge（以下「当サービス」）は、本サービスにおいてユーザーの個人情報の取り扱いについて、以下の通りプライバシーポリシーを定めます。</p>
               <h3 style={h3Style}>1. 個人情報の収集方法</h3>
-              <p>当社は、ユーザーが利用登録をする際に氏名、生年月日、メールアドレスなどの個人情報をお尋ねすることがあります。</p>
+              <p>当サービスは、ユーザーが利用登録をする際に氏名、生年月日、メールアドレスなどの個人情報をお尋ねすることがあります。</p>
               <h3 style={h3Style}>2. 個人情報を収集・利用する目的</h3>
-              <p>当社が個人情報を収集・利用する目的は、本サービスの提供・運営のため、ユーザーからのお問い合わせに回答するため、およびメンテナンスなどの重要なお知らせを送るためです。</p>
+              <p>当サービスが個人情報を収集・利用する目的は、本サービスの提供・運営のため、ユーザーからのお問い合わせに回答するため、およびメンテナンスなどの重要なお知らせを送るためです。</p>
             </>
           ) : (
             <>
-              <p>DreamBridge Inc. ("we") defines the policy regarding the handling of personal information of users in this Service as follows.</p>
+              <p>DreamBridge ("this Service") defines the policy regarding the handling of personal information of users in this Service as follows.</p>
               <h3 style={h3Style}>1. Method of Collection</h3>
-              <p>We may ask for personal information such as name, date of birth, and email address when a user registers for use.</p>
+              <p>This Service may ask for personal information such as name, date of birth, and email address when a user registers for use.</p>
               <h3 style={h3Style}>2. Purpose of Collection and Use</h3>
               <p>The purposes for which we collect and use personal information are to provide and operate the Service, to respond to user inquiries, and to send important notices such as maintenance information.</p>
             </>
