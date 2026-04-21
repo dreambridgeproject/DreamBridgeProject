@@ -45,7 +45,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="container" style={{ padding: '5rem 1rem', maxWidth: '400px' }}>
       <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: 'var(--shadow)' }}>
-        <h2 style={{ marginBottom: '2rem', textAlign: 'center', color: '#1a1a1a' }}>{t('auth.login')}</h2>
+        <h2 style={{ marginBottom: '2rem', textAlign: 'center', color: '#1a1a1a' }}>{t('auth.title_login')}</h2>
         {error && <div style={{ color: 'red', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
         <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleLogin}>
           <input 
@@ -70,7 +70,7 @@ export const LoginPage: React.FC = () => {
             disabled={loading}
             style={{ width: '100%', marginTop: '0.5rem' }}
           >
-            {loading ? t('auth.logging_in') : t('auth.login')}
+            {loading ? t('auth.logging_in') : t('auth.login_btn')}
           </button>
         </form>
         <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#666' }}>
@@ -181,6 +181,9 @@ export const SignupPage: React.FC = () => {
             {loading ? t('auth.sending') : t('auth.signup_btn')}
           </button>
         </form>
+        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#666' }}>
+          <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('auth.login_link')}</Link>
+        </div>
       </div>
     </div>
   );

@@ -35,8 +35,7 @@ const VerificationPage: React.FC = () => {
         </div>
         <h1 style={{ fontSize: '1.75rem', marginBottom: '1rem' }}>{t('verify.success')}</h1>
         <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem' }}>
-          Our team is currently reviewing your information.<br />
-          Usually, we will notify you of the results within 1-3 business days.
+          {t('verify.success_desc')}
         </p>
         <button className="btn btn-primary" onClick={() => navigate('/mypage')} style={{ width: '100%' }}>
           {t('detail.back')}
@@ -55,9 +54,7 @@ const VerificationPage: React.FC = () => {
           {isTalent ? t('verify.title_talent') : t('verify.title_agency')}
         </h1>
         <p style={{ color: 'var(--text-muted)' }}>
-          {isTalent 
-            ? 'We perform identity verification using official documents to improve trust.'
-            : 'We perform official verification to prevent impersonation and improve reliability.'}
+          {isTalent ? t('verify.subtitle_talent') : t('verify.subtitle_agency')}
         </p>
       </div>
 
@@ -72,27 +69,27 @@ const VerificationPage: React.FC = () => {
           <div style={stepContainerStyle}>
             <h2 style={stepTitleStyle}>
               {isTalent ? <User size={20} /> : <Building2 size={20} />} 
-              {t('verify.step1')}: {isTalent ? 'Basic Information' : 'Corporate Information'}
+              {t('verify.step1')}
             </h2>
             {isTalent ? (
               <>
                 <div style={inputGroupStyle}>
-                  <label style={labelStyle}>Full Name</label>
-                  <input type="text" placeholder="John Doe" defaultValue={currentUser?.full_name} style={inputStyle} required />
+                  <label style={labelStyle}>{t('mypage.full_name')}</label>
+                  <input type="text" placeholder="名前 太郎" defaultValue={currentUser?.full_name} style={inputStyle} required />
                 </div>
                 <div style={inputGroupStyle}>
-                  <label style={labelStyle}>Birth Date</label>
+                  <label style={labelStyle}>{t('verify.birth_date')}</label>
                   <input type="date" style={inputStyle} required />
                 </div>
               </>
             ) : (
               <>
                 <div style={inputGroupStyle}>
-                  <label style={labelStyle}>Corporate ID (13 digits)</label>
+                  <label style={labelStyle}>{t('verify.corporate_id')}</label>
                   <input type="text" placeholder="1234567890123" style={inputStyle} required />
                 </div>
                 <div style={inputGroupStyle}>
-                  <label style={labelStyle}>Official Website URL</label>
+                  <label style={labelStyle}>{t('verify.corporate_site')}</label>
                   <input type="url" placeholder="https://example.com" style={inputStyle} required />
                 </div>
               </>
@@ -105,16 +102,14 @@ const VerificationPage: React.FC = () => {
 
         {step === 2 && (
           <div style={stepContainerStyle}>
-            <h2 style={stepTitleStyle}><FileText size={20} /> {t('verify.step2')}: Upload Documents</h2>
+            <h2 style={stepTitleStyle}><FileText size={20} /> {t('verify.step2')}</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              {isTalent 
-                ? 'Please upload a photo of your Driver\'s License, My Number Card, or Passport.'
-                : 'Please upload a photo of your Certificate of Registered Matters (issued within 3 months).'}
+              {isTalent ? t('verify.doc_desc_talent') : t('verify.doc_desc_agency')}
             </p>
             <div style={uploadBoxStyle}>
               <Upload size={32} />
-              <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Select file or drag & drop</p>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, JPG, PNG (Max 10MB)</span>
+              <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>{t('verify.upload_box')}</p>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('verify.upload_hint')}</span>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
               <button type="button" className="btn btn-outline" onClick={() => setStep(1)} style={{ flex: 1 }}>{t('detail.back')}</button>
@@ -125,21 +120,21 @@ const VerificationPage: React.FC = () => {
 
         {step === 3 && (
           <div style={stepContainerStyle}>
-            <h2 style={stepTitleStyle}><CreditCard size={20} /> {t('verify.step3')}: Final Review</h2>
+            <h2 style={stepTitleStyle}><CreditCard size={20} /> {t('verify.step3')}</h2>
             <div style={{ backgroundColor: 'var(--background)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
               <div style={reviewItemStyle}>
-                <span>{isTalent ? 'Full Name' : 'Company Name'}</span>
-                <strong>{isTalent ? (currentUser?.full_name || 'Not set') : 'Sample Co., Ltd.'}</strong>
+                <span>{isTalent ? t('verify.review_name_talent') : t('verify.review_name_agency')}</span>
+                <strong>{isTalent ? (currentUser?.full_name || t('mypage.not_set')) : 'Sample Co., Ltd.'}</strong>
               </div>
               <div style={reviewItemStyle}>
-                <span>Submitted Document</span>
+                <span>{t('verify.review_doc')}</span>
                 <strong>{isTalent ? 'identity_doc.jpg' : 'corporate_cert.pdf'}</strong>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginBottom: '2rem' }}>
               <AlertCircle size={20} color="var(--accent)" style={{ flexShrink: 0 }} />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                Providing false information may result in account suspension. Submitted documents will not be used for any purpose other than verification.
+                {t('verify.warning')}
               </p>
             </div>
             <div style={{ display: 'flex', gap: '1rem' }}>

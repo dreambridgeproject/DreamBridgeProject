@@ -37,10 +37,10 @@ const AdminDashboard: React.FC = () => {
       .eq('id', id);
 
     if (error) {
-      alert('Failed to update');
+      alert(t('admin.update_fail'));
     } else {
       setAgencies(prev => prev.map(a => a.id === id ? { ...a, verificationStatus: status } : a));
-      alert(status === 'verified' ? 'Agency Verified' : 'Verification Revoked');
+      alert(status === 'verified' ? t('admin.update_success') : t('admin.revoke_success'));
     }
   };
 
@@ -51,7 +51,7 @@ const AdminDashboard: React.FC = () => {
           <h1 style={{ fontSize: '1.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <ShieldCheck size={32} color="var(--accent)" /> {t('admin.title')}
           </h1>
-          <p style={{ color: 'var(--text-muted)' }}>Agency User Verification & Safety Management</p>
+          <p style={{ color: 'var(--text-muted)' }}>{t('admin.subtitle')}</p>
         </div>
         <button onClick={fetchAgencies} className="btn btn-outline" style={{ padding: '0.5rem' }}>
           <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
@@ -62,15 +62,15 @@ const AdminDashboard: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
-              <th style={thStyle}>Agency Name / ID</th>
-              <th style={thStyle}>Location / SNS</th>
-              <th style={thStyle}>Current Status</th>
-              <th style={thStyle}>Actions</th>
+              <th style={thStyle}>{t('admin.th_name')}</th>
+              <th style={thStyle}>{t('admin.th_location')}</th>
+              <th style={thStyle}>{t('admin.th_status')}</th>
+              <th style={thStyle}>{t('admin.th_actions')}</th>
             </tr>
           </thead>
           <tbody>
             {agencies.length === 0 ? (
-              <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No agencies registered yet.</td></tr>
+              <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>{t('admin.no_agencies')}</td></tr>
             ) : (
               agencies.map(agency => (
                 <tr key={agency.id} style={{ borderBottom: '1px solid var(--border)' }}>
@@ -84,7 +84,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </td>
                   <td style={tdStyle}>
-                    <div>{agency.location || 'Not set'}</div>
+                    <div>{agency.location || t('mypage.not_set')}</div>
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
                       {agency.instagram_url && <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>IG</span>}
                       {agency.x_url && <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>X</span>}
@@ -94,7 +94,7 @@ const AdminDashboard: React.FC = () => {
                     {agency.verificationStatus === 'verified' ? (
                       <span style={badgeStyle('#10b981')}><ShieldCheck size={12} /> {t('offer.status_approved')}</span>
                     ) : (
-                      <span style={badgeStyle('var(--text-muted)')}><ShieldAlert size={12} /> Unverified</span>
+                      <span style={badgeStyle('var(--text-muted)')}><ShieldAlert size={12} /> {t('admin.status_unverified')}</span>
                     )}
                   </td>
                   <td style={tdStyle}>

@@ -154,7 +154,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
                     ))}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={14} /> {user.location || 'Unknown'}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={14} /> {user.location || t('mypage.not_set')}</span>
                     {user.age && <span>{user.age}{t('mypage.age')}</span>}
                   </div>
                 </div>

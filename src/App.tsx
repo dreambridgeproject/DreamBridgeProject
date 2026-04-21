@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { UserProvider } from './context/UserContext';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { UserProvider, useUser } from './context/UserContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
@@ -18,6 +18,22 @@ import VerificationPage from './pages/VerificationPage';
 import AdminDashboard from './pages/AdminDashboard';
 import LegalPage from './pages/LegalPage';
 import QuickAccessPopup from './components/QuickAccessPopup';
+import { type ReactNode } from 'react';
+
+// Admin Route Protection
+const AdminRoute = ({ children }: { children: ReactNode }) => {
+  const { user, loading } = useUser();
+  
+  if (loading) return null;
+  
+  const isAdmin = user?.email === 'admin@dreambridge.jp' || user?.email?.includes('admin@');
+  
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+};
 
 function App() {
   return (
@@ -43,11 +59,14 @@ function App() {
                 <Route path="/subscription" element={<SubscriptionPage />} />
                 <Route path="/payment-settings" element={<PaymentSettingsPage />} />
                 <Route path="/verification" element={<VerificationPage />} />
-                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin" element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                } />
                 <Route path="/legal" element={<LegalPage />} />
               </Routes>
             </main>
-            {/* Always show bottom nav for logged in users, QuickAccess for utility */}
             <QuickAccessPopup />
             <BottomNav />
           </div>
