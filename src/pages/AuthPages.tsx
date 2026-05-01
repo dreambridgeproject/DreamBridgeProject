@@ -88,13 +88,21 @@ export const SignupPage: React.FC = () => {
   const { t, language } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [parentalConsent, setParentalConsent] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isTalent = type === 'talent';
+  const age = birthDate ? Math.floor((new Date().getTime() - new Date(birthDate).getTime()) / 3.15576e+10) : 20;
+  const isMinor = isTalent && birthDate && age < 18;
+
+  const canSubmit = agreed && (!isMinor || parentalConsent) && !loading;
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreed) return;
+    if (!canSubmit) return;
 
     setLoading(true);
     setError(null);
@@ -105,6 +113,8 @@ export const SignupPage: React.FC = () => {
       options: {
         data: {
           role: type, // 'talent' or 'agency'
+          birth_date: birthDate,
+          is_minor: isMinor
         }
       }
     });
@@ -142,6 +152,37 @@ export const SignupPage: React.FC = () => {
             style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
             required 
           />
+
+          {isTalent && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label style={{ fontSize: '0.75rem', color: '#666', marginLeft: '0.25rem' }}>{t('verify.birth_date')}</label>
+              <input 
+                type="date" 
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
+                required={isTalent}
+              />
+            </div>
+          )}
+
+          {isMinor && (
+            <div style={{ backgroundColor: 'rgba(212, 175, 55, 0.1)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--accent)' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <input 
+                  type="checkbox" 
+                  id="parental-consent" 
+                  checked={parentalConsent} 
+                  onChange={(e) => setParentalConsent(e.target.checked)} 
+                  style={{ marginTop: '0.25rem' }}
+                  required 
+                />
+                <label htmlFor="parental-consent" style={{ fontSize: '0.75rem', color: '#1a1a1a', fontWeight: 700, lineHeight: 1.4 }}>
+                  【未成年の方へ】保護者の同意を得て登録していますか？
+                </label>
+              </div>
+            </div>
+          )}
           
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '0.5rem' }}>
             <input 
@@ -175,8 +216,8 @@ export const SignupPage: React.FC = () => {
           <button 
             className="btn btn-primary" 
             type="submit" 
-            style={{ width: '100%', marginTop: '0.5rem', opacity: agreed && !loading ? 1 : 0.6 }}
-            disabled={!agreed || loading}
+            style={{ width: '100%', marginTop: '0.5rem', opacity: canSubmit ? 1 : 0.6 }}
+            disabled={!canSubmit}
           >
             {loading ? t('auth.sending') : t('auth.signup_btn')}
           </button>

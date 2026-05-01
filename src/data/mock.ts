@@ -20,8 +20,8 @@ export const mockTalents: Talent[] = [
     videos: ['https://www.youtube.com/embed/dQw4w9WgXcQ'],
     audios: [],
     plan: 'premium',
-    verificationStatus: 'verified',
-    blockedUserIds: []
+    verification_status: 'verified',
+    blocked_user_ids: []
   },
   {
     id: 't2',
@@ -38,8 +38,8 @@ export const mockTalents: Talent[] = [
     videos: [],
     audios: [],
     plan: 'free',
-    verificationStatus: 'none',
-    blockedUserIds: []
+    verification_status: 'none',
+    blocked_user_ids: []
   },
   {
     id: 't3',
@@ -56,8 +56,8 @@ export const mockTalents: Talent[] = [
     videos: [],
     audios: [],
     plan: 'free',
-    verificationStatus: 'reviewing',
-    blockedUserIds: []
+    verification_status: 'reviewing',
+    blocked_user_ids: []
   }
 ];
 
@@ -72,8 +72,8 @@ export const mockAgencies: Agency[] = [
     location: '東京都港区',
     bio: '次世代のスターを育成する総合エンターテインメント事務所です。',
     plan: 'standard',
-    verificationStatus: 'verified',
-    blockedUserIds: [],
+    verification_status: 'verified',
+    blocked_user_ids: [],
     photos: [],
     videos: [],
     audios: []
@@ -88,8 +88,8 @@ export const mockAgencies: Agency[] = [
     location: '東京都渋谷区',
     bio: '実力派俳優のマネジメントに特化した事務所です。',
     plan: 'pro',
-    verificationStatus: 'verified',
-    blockedUserIds: [],
+    verification_status: 'verified',
+    blocked_user_ids: [],
     photos: [],
     videos: [],
     audios: []
@@ -104,8 +104,8 @@ export const mockAgencies: Agency[] = [
     location: '東京都千代田区',
     bio: '世界を見据えた大手エージェンシー。',
     plan: 'enterprise',
-    verificationStatus: 'verified',
-    blockedUserIds: [],
+    verification_status: 'verified',
+    blocked_user_ids: [],
     photos: [],
     videos: [],
     audios: []
@@ -120,8 +120,8 @@ export const mockAgencies: Agency[] = [
     location: '埼玉県',
     bio: '個人のエージェントです。',
     plan: 'free',
-    verificationStatus: 'reviewing',
-    blockedUserIds: [],
+    verification_status: 'reviewing',
+    blocked_user_ids: [],
     photos: [],
     videos: [],
     audios: []

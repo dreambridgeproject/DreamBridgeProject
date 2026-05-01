@@ -8,23 +8,79 @@ import {
 } from 'lucide-react';
 
 const VerificationPage: React.FC = () => {
-  const { role, currentUser, loading } = useUser();
+  const { role, currentUser, loading, updateProfile, user } = useUser();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    birthDate: '',
+    corporateId: '',
+    corporateSite: '',
+    docUrl: '',
+    parentName: '',
+    parentContact: ''
+  });
 
   if (loading) return <div className="container" style={{ padding: '5rem', textAlign: 'center', color: 'var(--text-main)' }}>{t('mypage.loading')}</div>;
-  if (!role) {
+  if (!role || !user) {
     navigate('/login');
     return null;
   }
 
   const isTalent = role === 'talent';
+  const age = formData.birthDate ? Math.floor((new Date().getTime() - new Date(formData.birthDate).getTime()) / 3.15576e+10) : 20;
+  const isMinor = isTalent && age < 18;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars') // Using avatars bucket for now as we know it exists
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, docUrl: publicUrl });
+      alert(t('mypage.upload_success'));
+    } catch (error: any) {
+      alert('Upload Error: ' + error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    try {
+      const updates: any = {
+        verification_status: 'reviewing',
+        verification_doc_url: formData.docUrl
+      };
+
+      if (isTalent && isMinor) {
+        updates.parental_consent_name = formData.parentName;
+        updates.parental_consent_contact = formData.parentContact;
+      }
+
+      await updateProfile(updates);
+      setIsSubmitted(true);
+    } catch (error: any) {
+      alert('Error: ' + error.message);
+    }
   };
 
   if (isSubmitted) {
@@ -75,22 +131,75 @@ const VerificationPage: React.FC = () => {
               <>
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>{t('mypage.full_name')}</label>
-                  <input type="text" placeholder="名前 太郎" defaultValue={currentUser?.full_name} style={inputStyle} required />
+                  <input 
+                    type="text" 
+                    placeholder="名前 太郎" 
+                    value={currentUser?.full_name || ''} 
+                    style={{ ...inputStyle, opacity: 0.6 }} 
+                    disabled 
+                  />
                 </div>
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>{t('verify.birth_date')}</label>
-                  <input type="date" style={inputStyle} required />
+                  <input 
+                    type="date" 
+                    style={inputStyle} 
+                    value={formData.birthDate}
+                    onChange={e => setFormData({ ...formData, birthDate: e.target.value })}
+                    required 
+                  />
                 </div>
+                {isMinor && (
+                  <div style={{ backgroundColor: 'rgba(212, 175, 55, 0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--accent)', marginBottom: '1.5rem' }}>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 700, marginBottom: '1rem' }}>【未成年の方】保護者の同意が必要です</p>
+                    <div style={inputGroupStyle}>
+                      <label style={labelStyle}>保護者氏名</label>
+                      <input 
+                        type="text" 
+                        placeholder="保護者 太郎" 
+                        style={inputStyle} 
+                        value={formData.parentName}
+                        onChange={e => setFormData({ ...formData, parentName: e.target.value })}
+                        required 
+                      />
+                    </div>
+                    <div style={{ ...inputGroupStyle, marginBottom: 0 }}>
+                      <label style={labelStyle}>保護者の連絡先 (電話番号/メール)</label>
+                      <input 
+                        type="text" 
+                        placeholder="090-xxxx-xxxx" 
+                        style={inputStyle} 
+                        value={formData.parentContact}
+                        onChange={e => setFormData({ ...formData, parentContact: e.target.value })}
+                        required 
+                      />
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <>
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>{t('verify.corporate_id')}</label>
-                  <input type="text" placeholder="1234567890123" style={inputStyle} required />
+                  <input 
+                    type="text" 
+                    placeholder="1234567890123" 
+                    style={inputStyle} 
+                    value={formData.corporateId}
+                    onChange={e => setFormData({ ...formData, corporateId: e.target.value })}
+                    required 
+                  />
                 </div>
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>{t('verify.corporate_site')}</label>
-                  <input type="url" placeholder="https://example.com" style={inputStyle} required />
+                  <input 
+                    type="url" 
+                    placeholder="https://example.com" 
+                    style={inputStyle} 
+                    value={formData.corporateSite}
+                    onChange={e => setFormData({ ...formData, corporateSite: e.target.value })}
+                    required 
+                  />
                 </div>
               </>
             )}
@@ -106,14 +215,34 @@ const VerificationPage: React.FC = () => {
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
               {isTalent ? t('verify.doc_desc_talent') : t('verify.doc_desc_agency')}
             </p>
-            <div style={uploadBoxStyle}>
-              <Upload size={32} />
-              <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>{t('verify.upload_box')}</p>
+            <div 
+              style={{ ...uploadBoxStyle, borderColor: formData.docUrl ? '#10b981' : 'var(--border)' }}
+              onClick={() => document.getElementById('doc-upload')?.click()}
+            >
+              {formData.docUrl ? <CheckCircle2 size={32} color="#10b981" /> : <Upload size={32} />}
+              <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                {isUploading ? t('auth.sending') : formData.docUrl ? 'アップロード完了' : t('verify.upload_box')}
+              </p>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('verify.upload_hint')}</span>
+              <input 
+                type="file" 
+                id="doc-upload" 
+                onChange={handleFileUpload} 
+                accept="image/*,application/pdf" 
+                style={{ display: 'none' }} 
+              />
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
               <button type="button" className="btn btn-outline" onClick={() => setStep(1)} style={{ flex: 1 }}>{t('detail.back')}</button>
-              <button type="button" className="btn btn-primary" onClick={() => setStep(3)} style={{ flex: 2 }}>{t('verify.next')}</button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => setStep(3)} 
+                disabled={!formData.docUrl || isUploading}
+                style={{ flex: 2, opacity: (!formData.docUrl || isUploading) ? 0.6 : 1 }}
+              >
+                {t('verify.next')}
+              </button>
             </div>
           </div>
         )}
@@ -124,12 +253,24 @@ const VerificationPage: React.FC = () => {
             <div style={{ backgroundColor: 'var(--background)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
               <div style={reviewItemStyle}>
                 <span>{isTalent ? t('verify.review_name_talent') : t('verify.review_name_agency')}</span>
-                <strong>{isTalent ? (currentUser?.full_name || t('mypage.not_set')) : 'Sample Co., Ltd.'}</strong>
+                <strong>{isTalent ? (currentUser?.full_name || t('mypage.not_set')) : (formData.corporateId || 'Sample Co., Ltd.')}</strong>
               </div>
               <div style={reviewItemStyle}>
                 <span>{t('verify.review_doc')}</span>
-                <strong>{isTalent ? 'identity_doc.jpg' : 'corporate_cert.pdf'}</strong>
+                <strong>{formData.docUrl ? 'uploaded_document' : '未完了'}</strong>
               </div>
+              {isMinor && (
+                <>
+                  <div style={reviewItemStyle}>
+                    <span>保護者名</span>
+                    <strong>{formData.parentName}</strong>
+                  </div>
+                  <div style={reviewItemStyle}>
+                    <span>保護者連絡先</span>
+                    <strong>{formData.parentContact}</strong>
+                  </div>
+                </>
+              )}
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginBottom: '2rem' }}>
               <AlertCircle size={20} color="var(--accent)" style={{ flexShrink: 0 }} />

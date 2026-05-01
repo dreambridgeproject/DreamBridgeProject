@@ -78,25 +78,29 @@ const MyPage: React.FC = () => {
 
   const handleSave = async () => {
     setLoading(true);
+    console.log('Attempting to save profile...', editData);
     try {
-      await updateProfile({
-        name: editData.full_name || 'No Name',
+      const updates: any = {
         full_name: editData.full_name,
         bio: editData.bio,
         location: editData.location,
-        age: parseInt(editData.age) || undefined,
-        height: parseInt(editData.height) || undefined,
-        weight: parseInt(editData.weight) || undefined,
-        hobbies: editData.hobbies,
-        skills: editData.skills,
-        website_url: editData.website_url,
-        instagram_url: editData.instagram_url,
-        x_url: editData.x_url,
         genres: editData.genres
-      } as any);
+      };
+
+      if (isTalent) {
+        updates.age = parseInt(editData.age) || null;
+        updates.height = parseInt(editData.height) || null;
+        updates.weight = parseInt(editData.weight) || null;
+        updates.hobbies = editData.hobbies;
+        updates.skills = editData.skills;
+      }
+
+      await updateProfile(updates);
       setIsEditing(false);
-    } catch (error) {
-      alert(t('mypage.save_error'));
+      console.log('Profile saved successfully');
+    } catch (error: any) {
+      console.error('Failed to save profile:', error);
+      alert(t('mypage.save_error') + '\n' + (error.message || ''));
     } finally {
       setLoading(false);
     }
@@ -104,30 +108,42 @@ const MyPage: React.FC = () => {
 
   const uploadMedia = async (file: File, bucket: string, field: 'photos' | 'videos' | 'audios' | 'avatar_url') => {
     setLoading(true);
+    console.log(`Uploading to ${bucket}, updating field ${field}...`);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from(bucket)
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error details:', JSON.stringify(uploadError));
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       const { data: { publicUrl } } = supabase.storage
         .from(bucket)
         .getPublicUrl(filePath);
 
+      console.log('Generated Public URL:', publicUrl);
+
       if (field === 'avatar_url') {
-        await updateProfile({ avatar_url: publicUrl } as any);
+        await updateProfile({ avatar_url: publicUrl });
       } else {
         const currentList = currentUser?.[field] || [];
-        await updateProfile({ [field]: [...currentList, publicUrl] } as any);
+        await updateProfile({ [field]: [...currentList, publicUrl] });
       }
       alert(t('mypage.upload_success'));
     } catch (error: any) {
-      alert('Error: ' + error.message);
+      console.error('Full upload process error:', error);
+      alert('Upload Error: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -387,37 +403,15 @@ const MyPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Videos & Audios */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-            <div>
-              <h3 style={{ fontSize: '0.9375rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                <span>{t('mypage.videos')}</span>
-                <button onClick={() => videoInputRef.current?.click()} style={addMediaBtnStyle}><Plus size={14} /> {t('mypage.add')}</button>
-                <input type="file" ref={videoInputRef} onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'videos', 'videos')} accept="video/*" style={{ display: 'none' }} />
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {currentUser?.videos?.map((url, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <video src={url} style={{ width: '100px', borderRadius: '4px' }} />
-                    <button onClick={() => deleteMedia(url, 'videos')} className="btn" style={{ padding: '0.25rem', color: 'var(--error)' }}><Trash2 size={16} /></button>
-                  </div>
-                ))}
-              </div>
+          {/* Videos & Audios (Disabled during Beta to preserve storage) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', opacity: 0.6 }}>
+            <div style={{ border: '1px dashed var(--border)', borderRadius: 'var(--radius-sm)', padding: '1rem', textAlign: 'center' }}>
+              <h3 style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{t('mypage.videos')}</h3>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600 }}>{t('mypage.coming_soon_official')}</p>
             </div>
-            <div>
-              <h3 style={{ fontSize: '0.9375rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                <span>{t('mypage.audios')}</span>
-                <button onClick={() => audioInputRef.current?.click()} style={addMediaBtnStyle}><Plus size={14} /> {t('mypage.add')}</button>
-                <input type="file" ref={audioInputRef} onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'audios', 'audios')} accept="audio/*" style={{ display: 'none' }} />
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {currentUser?.audios?.map((url, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <audio src={url} controls style={{ height: '30px' }} />
-                    <button onClick={() => deleteMedia(url, 'audios')} className="btn" style={{ padding: '0.25rem', color: 'var(--error)' }}><Trash2 size={16} /></button>
-                  </div>
-                ))}
-              </div>
+            <div style={{ border: '1px dashed var(--border)', borderRadius: 'var(--radius-sm)', padding: '1rem', textAlign: 'center' }}>
+              <h3 style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{t('mypage.audios')}</h3>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600 }}>{t('mypage.coming_soon_official')}</p>
             </div>
           </div>
         </div>

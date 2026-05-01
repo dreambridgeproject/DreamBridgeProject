@@ -21,6 +21,8 @@ interface UserContextType {
   notifications: Notification[];
   markNotificationAsRead: (id: string) => void;
   clearNotifications: () => void;
+  checkOfferLimit: () => Promise<boolean>;
+  markMessagesAsRead: (offerId: string) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -51,14 +53,15 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
         const newProfile = {
           id: userId,
-          name: metadata?.full_name || metadata?.name || '名前未設定',
+          full_name: metadata?.full_name || metadata?.name || '名前未設定',
           role: role,
           genres: [],
           photos: [],
           videos: [],
           audios: [],
           plan: 'free',
-          verificationStatus: 'none'
+          verification_status: 'none',
+          blocked_user_ids: []
         };
         
         const { data: createdData, error: createError } = await supabase
@@ -68,7 +71,8 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
           .single();
           
         if (createError) {
-          console.error('Profile creation error:', createError);
+          console.error('Profile creation error details:', JSON.stringify(createError));
+          // Return the local profile object so the app can still function
           return newProfile as any;
         }
         return createdData;
@@ -99,8 +103,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
       } catch (err) {
         console.error('Auth initialization error:', err);
       } finally {
-        if (mounted) setLoading(setLoading as any === false ? false : false); // Safe way to ensure loading is false
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
@@ -131,16 +134,37 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user logged in for updateProfile');
+      return;
+    }
+    
+    console.log('Updating profile for:', user.id, updates);
+    
+    // Ensure we don't accidentally overwrite the role with something null/undefined
+    // unless it's explicitly provided in updates (which it shouldn't be for regular profile edits)
+    const finalUpdates = { ...updates };
+    if (currentUser?.role && !finalUpdates.role) {
+      finalUpdates.role = currentUser.role;
+    }
+
     const { data, error } = await supabase
       .from('profiles')
-      .update(updates)
-      .eq('id', user.id)
+      .upsert({ id: user.id, ...finalUpdates })
       .select()
       .single();
     
-    if (!error && data) {
+    if (error) {
+      console.error('Update profile error details:', JSON.stringify(error));
+      throw error;
+    }
+    
+    if (data) {
+      console.log('Profile updated successfully:', data);
       setCurrentUser(data);
+      if (data.role) setRole(data.role); // Sync state role with DB role
+    } else {
+      console.warn('Profile update returned no data');
     }
   };
 
@@ -168,11 +192,50 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const markNotificationAsRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const clearNotifications = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
+  const checkOfferLimit = async () => {
+    if (!user || role !== 'agency' || currentUser?.plan !== 'free') return false;
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { count, error } = await supabase
+      .from('offers')
+      .select('*', { count: 'exact', head: true })
+      .eq('sender_id', user.id)
+      .gte('created_at', startOfMonth.toISOString());
+
+    if (error) {
+      console.error('Error checking offer limit:', error);
+      return false;
+    }
+
+    return (count || 0) >= 3;
+  };
+
+  const markMessagesAsRead = async (offerId: string) => {
+    if (!user) return;
+    try {
+      await supabase
+        .from('messages')
+        .update({ unread: false })
+        .eq('offer_id', offerId)
+        .neq('sender_id', user.id)
+        .eq('unread', true);
+      
+      // Update local state to reflect changes immediately
+      setMessages(prev => prev.map(m => (m.offerId === offerId && m.senderId !== user.id) ? { ...m, unread: false } : m));
+    } catch (err) {
+      console.error('Error marking messages as read:', err);
+    }
+  };
+
   return (
     <UserContext.Provider value={{ 
       currentUser, role, user, loading, login, logout, updateProfile,
       likes, toggleLike, offers, sendOffer, updateOfferStatus,
-      messages, sendMessage, notifications, markNotificationAsRead, clearNotifications
+      messages, sendMessage, notifications, markNotificationAsRead, clearNotifications,
+      checkOfferLimit, markMessagesAsRead
     }}>
       {children}
     </UserContext.Provider>

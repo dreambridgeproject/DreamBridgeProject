@@ -9,9 +9,6 @@ export default defineConfig({
     port: 5173, // 5174から5173に戻して通知を再発火
     strictPort: true,
     allowedHosts: true,
-    hmr: {
-      clientPort: 443,
-    },
     cors: true,
   },
 })

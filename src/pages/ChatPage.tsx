@@ -8,18 +8,21 @@ import OffersPage from './OffersPage';
 
 const ChatPage: React.FC = () => {
   const { offerId } = useParams<{ offerId?: string }>();
-  const { currentUser, offers, messages, sendMessage, role } = useUser();
+  const { currentUser, offers, messages, sendMessage, role, markMessagesAsRead } = useUser();
   const { t } = useLanguage();
   const [inputText, setInputText] = useState('');
   const [activeTab, setActiveTab] = useState<'chats' | 'offers'>('chats');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll chat to bottom
+  // Auto-scroll chat to bottom and Mark as Read
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, offerId]);
+    if (offerId) {
+      markMessagesAsRead(offerId);
+    }
+  }, [messages, offerId, markMessagesAsRead]);
 
   if (!currentUser) return null;
 
@@ -252,9 +255,14 @@ const ChatPage: React.FC = () => {
                 }}>
                   {msg.text}
                 </div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
+                  {isMine && !msg.unread && (
+                    <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 'bold' }}>既読</span>
+                  )}
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               </div>
             </div>
           );

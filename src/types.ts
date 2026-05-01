@@ -4,7 +4,7 @@ export type Genre = 'アイドル' | 'モデル' | '俳優' | '歌手' | '声優
 
 export interface Profile {
   id: string;
-  name: string;
+  name?: string;
   full_name?: string;
   avatar_url?: string;
   role: UserRole;
@@ -23,8 +23,8 @@ export interface Profile {
   videos: string[];
   audios: string[];
   plan: 'free' | 'standard' | 'pro' | 'enterprise' | 'premium';
-  verificationStatus: 'none' | 'reviewing' | 'verified';
-  blockedUserIds: string[];
+  verification_status: 'none' | 'reviewing' | 'verified';
+  blocked_user_ids: string[];
 }
 
 // Backward compatibility for existing components

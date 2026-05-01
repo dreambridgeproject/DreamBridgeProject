@@ -19,7 +19,7 @@ const QuickAccessPopup: React.FC = () => {
                    currentUser.plan === 'standard' ? 'スタンダード' : 
                    currentUser.plan === 'pro' ? 'PRO' : 'エンタープライズ';
 
-  const verificationStatus = currentUser.verificationStatus || 'none';
+  const verificationStatus = currentUser.verification_status || 'none';
 
   return (
     <div style={{
