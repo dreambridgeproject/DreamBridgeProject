@@ -38,6 +38,32 @@ const AdminDashboard: React.FC = () => {
     setLoading(false);
   };
 
+  const handleSeedData = async () => {
+    setLoading(true);
+    try {
+      // Create seed profiles
+      const seedProfiles = [
+        ...mockTalents.map(t => ({ ...t, verification_status: 'verified' })),
+        ...mockAgencies.map(a => ({ ...a, verification_status: 'verified' }))
+      ];
+
+      for (const profile of seedProfiles) {
+        const { error } = await supabase
+          .from('profiles')
+          .upsert(profile);
+        if (error) console.error('Error seeding profile:', error);
+      }
+      
+      alert('サンプルデータを投入しました');
+      fetchData();
+    } catch (err) {
+      console.error('Seed error:', err);
+      alert('データ投入中にエラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);

@@ -15,8 +15,6 @@ const MyPage: React.FC = () => {
   const navigate = useNavigate();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const audioInputRef = useRef<HTMLInputElement>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);

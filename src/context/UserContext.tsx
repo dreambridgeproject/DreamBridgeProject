@@ -34,7 +34,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [role, setRole] = useState<UserRole | null>(null);
   const [likes, setLikes] = useState<string[]>([]);
   const [offers] = useState<Offer[]>([]);
-  const [messages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const fetchProfile = async (userId: string, metadata?: any) => {
@@ -224,7 +224,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
         .eq('unread', true);
       
       // Update local state to reflect changes immediately
-      setMessages(prev => prev.map(m => (m.offerId === offerId && m.senderId !== user.id) ? { ...m, unread: false } : m));
+      setMessages((prev: ChatMessage[]) => prev.map((m: ChatMessage) => (m.offerId === offerId && m.senderId !== user.id) ? { ...m, unread: false } : m));
     } catch (err) {
       console.error('Error marking messages as read:', err);
     }
