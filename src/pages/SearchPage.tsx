@@ -146,14 +146,16 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: '1.5rem'
             }}>
-              <div style={filterGroupStyle}>
-                <label style={filterLabelStyle}>年齢範囲</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input type="number" placeholder="最小" value={filters.minAge} onChange={e => setFilters({...filters, minAge: e.target.value})} style={filterInputStyle} />
-                  <span>〜</span>
-                  <input type="number" placeholder="最大" value={filters.maxAge} onChange={e => setFilters({...filters, maxAge: e.target.value})} style={filterInputStyle} />
+              {type === 'talent' && (
+                <div style={filterGroupStyle}>
+                  <label style={filterLabelStyle}>年齢範囲</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input type="number" placeholder="最小" value={filters.minAge} onChange={e => setFilters({...filters, minAge: e.target.value})} style={filterInputStyle} />
+                    <span>〜</span>
+                    <input type="number" placeholder="最大" value={filters.maxAge} onChange={e => setFilters({...filters, maxAge: e.target.value})} style={filterInputStyle} />
+                  </div>
                 </div>
-              </div>
+              )}
               
               {type === 'talent' && (
                 <div style={filterGroupStyle}>
