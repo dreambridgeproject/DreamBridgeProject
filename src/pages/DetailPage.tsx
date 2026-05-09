@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { logView } from '../lib/analytics';
 import type { Profile } from '../types';
 import { 
   Heart, MapPin, ChevronLeft, ShieldCheck, 
@@ -45,6 +46,8 @@ const DetailPage: React.FC = () => {
 
       if (!error) {
         setProfile(data as Profile);
+        // Log the view for AI analytics
+        logView(currentUser?.id, id!, role || 'guest');
       }
       setLoading(false);
     };

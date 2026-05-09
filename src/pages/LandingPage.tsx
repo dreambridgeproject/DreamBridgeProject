@@ -192,7 +192,7 @@ const LandingPage: React.FC = () => {
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <h2 style={{ fontSize: 'clamp(1.75rem, 6vw, 3rem)', marginBottom: '1.5rem' }}>今すぐベータ版に参加</h2>
           <p style={{ fontSize: '1.125rem', marginBottom: '2.5rem', opacity: 0.9 }}>
-            正式リリース（2026年7月予定）までの期間、全ての機能を無料でご利用いただけます。
+            現在、全ての機能を無料でご利用いただけます。この機会にぜひベータ版をお試しください。
           </p>
           <button 
             onClick={() => navigate('/signup/talent')} 

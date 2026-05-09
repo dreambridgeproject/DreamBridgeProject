@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, type FC, type ReactNode } from 'react';
 import type { UserRole, Offer, ChatMessage, Notification, Profile } from '../types';
 import { supabase } from '../lib/supabase';
+import { logAction } from '../lib/analytics';
 import type { User } from '@supabase/supabase-js';
 
 interface UserContextType {
@@ -170,15 +171,21 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const sendOffer = async (receiverId: string) => {
     if (!user) return;
-    await supabase.from('offers').insert({
+    const { error } = await supabase.from('offers').insert({
       sender_id: user.id,
       receiver_id: receiverId,
       status: 'pending'
     });
+    if (!error) {
+      logAction(user.id, 'scout_sent', receiverId);
+    }
   };
 
   const updateOfferStatus = async (offerId: string, status: 'approved' | 'declined') => {
-    await supabase.from('offers').update({ status }).eq('id', offerId);
+    const { error } = await supabase.from('offers').update({ status }).eq('id', offerId);
+    if (!error) {
+      logAction(user?.id, `offer_${status}`, offerId);
+    }
   };
 
   const sendMessage = async (offerId: string, text: string) => {
@@ -188,7 +195,11 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const login = (selectedRole: UserRole) => setRole(selectedRole);
   const logout = async () => { await supabase.auth.signOut(); };
-  const toggleLike = (id: string) => setLikes(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  const toggleLike = (id: string) => {
+    const isLiked = likes.includes(id);
+    setLikes(prev => isLiked ? prev.filter(i => i !== id) : [...prev, id]);
+    logAction(user?.id, isLiked ? 'like_removed' : 'like_added', id);
+  };
   const markNotificationAsRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const clearNotifications = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 

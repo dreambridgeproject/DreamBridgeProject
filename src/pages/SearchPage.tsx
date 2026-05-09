@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../context/LanguageContext';
+import { useUser } from '../context/UserContext';
+import { logSearch } from '../lib/analytics';
 import { Search, MapPin, User, Users, Camera } from 'lucide-react';
 import type { Profile } from '../types';
 
@@ -11,6 +13,7 @@ interface SearchPageProps {
 
 const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
   const { t } = useLanguage();
+  const { currentUser, role } = useUser();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +64,11 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
     setLoading(true);
     console.log(`Searching for ${type} with filters:`, { selectedGenre, ...filters, query });
     
+    // Log search for AI analytics (only if agency is searching for talent)
+    if (role === 'agency' && type === 'talent') {
+      logSearch(currentUser?.id, { selectedGenre, ...filters, query });
+    }
+
     try {
       let q = supabase
         .from('profiles')
