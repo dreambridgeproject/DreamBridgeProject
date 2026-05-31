@@ -11,9 +11,10 @@ import {
 const AdminDashboard: React.FC = () => {
   const { t } = useLanguage();
   const [agencies, setAgencies] = useState<Profile[]>([]);
+  const [castingCompanies, setCastingCompanies] = useState<Profile[]>([]);
   const [pending, setPending] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'agencies' | 'pending'>('pending');
+  const [activeTab, setActiveTab] = useState<'agencies' | 'casting' | 'pending'>('pending');
 
   const fetchData = async () => {
     setLoading(true);
@@ -25,6 +26,13 @@ const AdminDashboard: React.FC = () => {
       .eq('role', 'agency')
       .order('id', { ascending: false });
 
+    // Fetch all casting companies
+    const { data: castingData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'casting')
+      .order('id', { ascending: false });
+
     // Fetch all profiles pending review
     const { data: pendingData } = await supabase
       .from('profiles')
@@ -33,6 +41,7 @@ const AdminDashboard: React.FC = () => {
       .order('id', { ascending: false });
 
     if (agencyData) setAgencies(agencyData as Profile[]);
+    if (castingData) setCastingCompanies(castingData as Profile[]);
     if (pendingData) setPending(pendingData as Profile[]);
     
     setLoading(false);
@@ -54,11 +63,11 @@ const AdminDashboard: React.FC = () => {
         if (error) console.error('Error seeding profile:', error);
       }
       
-      alert('サンプルデータを投入しました');
+      alert(t('admin.seed_success_msg'));
       fetchData();
     } catch (err) {
       console.error('Seed error:', err);
-      alert('データ投入中にエラーが発生しました');
+      alert(t('admin.seed_error_msg'));
     } finally {
       setLoading(false);
     }
@@ -68,7 +77,7 @@ const AdminDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleUpdateStatus = async (id: string, status: 'verified' | 'none', list: 'agencies' | 'pending') => {
+  const handleUpdateStatus = async (id: string, status: 'verified' | 'none' | 'rejected', list: 'agencies' | 'casting' | 'pending') => {
     const { error } = await supabase
       .from('profiles')
       .update({ verification_status: status })
@@ -78,10 +87,12 @@ const AdminDashboard: React.FC = () => {
       alert(t('admin.update_fail'));
     } else {
       if (list === 'agencies') {
-        setAgencies(prev => prev.map(a => a.id === id ? { ...a, verification_status: status } : a));
+        setAgencies(prev => prev.map(a => a.id === id ? { ...a, verification_status: status as any } : a));
+      } else if (list === 'casting') {
+        setCastingCompanies(prev => prev.map(c => c.id === id ? { ...c, verification_status: status as any } : c));
       } else {
         setPending(prev => prev.filter(p => p.id !== id));
-        fetchData(); // Refresh both lists
+        fetchData(); // Refresh lists
       }
       alert(status === 'verified' ? t('admin.update_success') : t('admin.revoke_success'));
     }
@@ -98,7 +109,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button onClick={handleSeedData} className="btn btn-outline" style={{ padding: '0.5rem 1rem', borderColor: 'var(--success)', color: 'var(--success)' }}>
-            <Database size={20} /> サンプルデータ投入
+            <Database size={20} /> {t('admin.seed_data')}
           </button>
           <button onClick={fetchData} className="btn btn-outline" style={{ padding: '0.5rem' }}>
             <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
@@ -106,7 +117,7 @@ const AdminDashboard: React.FC = () => {
         </div>
       </header>
 
-      <div style={{ display: 'flex', borderBottom: '2px solid var(--border)', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', borderBottom: '2px solid var(--border)', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <button 
           onClick={() => setActiveTab('pending')}
           style={{ 
@@ -119,7 +130,7 @@ const AdminDashboard: React.FC = () => {
             cursor: 'pointer'
           }}
         >
-          承認待ち ({pending.length})
+          {t('admin.tab_pending')} ({pending.length})
         </button>
         <button 
           onClick={() => setActiveTab('agencies')}
@@ -133,7 +144,21 @@ const AdminDashboard: React.FC = () => {
             cursor: 'pointer'
           }}
         >
-          登録済み事務所 ({agencies.length})
+          {t('admin.tab_agencies')} ({agencies.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('casting')}
+          style={{ 
+            padding: '1rem 2rem', 
+            background: 'none', 
+            border: 'none', 
+            color: activeTab === 'casting' ? 'var(--accent)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'casting' ? '2px solid var(--accent)' : 'none',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >
+          {t('admin.tab_casting')} ({castingCompanies.length})
         </button>
       </div>
 
@@ -142,10 +167,10 @@ const AdminDashboard: React.FC = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
             <thead>
               <tr style={{ backgroundColor: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
-                <th style={thStyle}>申請者 / ID</th>
-                <th style={thStyle}>種類 / 年齢</th>
-                <th style={thStyle}>提出書類 / 保護者情報</th>
-                <th style={thStyle}>操作</th>
+                <th style={thStyle}>{t('admin.th_id')}</th>
+                <th style={thStyle}>{t('admin.th_type')}</th>
+                <th style={thStyle}>{t('admin.th_detail')}</th>
+                <th style={thStyle}>{t('admin.th_actions_row')}</th>
               </tr>
             </thead>
             <tbody>
@@ -155,27 +180,38 @@ const AdminDashboard: React.FC = () => {
                 pending.map(item => (
                   <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={tdStyle}>
-                      <div style={{ fontWeight: 600 }}>{item.full_name}</div>
+                      <div style={{ fontWeight: 600 }}>{item.full_name || item.name}</div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.id}</div>
                     </td>
                     <td style={tdStyle}>
-                      <div style={{ textTransform: 'capitalize' }}>{item.role}</div>
-                      <div style={{ fontSize: '0.875rem' }}>{item.age || '不明'}歳</div>
+                      <div style={{ textTransform: 'capitalize', fontWeight: 600, color: item.role === 'casting' ? 'var(--accent)' : 'inherit' }}>{item.role}</div>
+                      <div style={{ fontSize: '0.875rem' }}>{(item as any).representative_name || (item.age ? item.age + t('mypage.age') : '')}</div>
                     </td>
                     <td style={tdStyle}>
-                      <a 
-                        href={(item as any).verification_doc_url} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        style={{ color: 'var(--accent)', textDecoration: 'underline', display: 'block', marginBottom: '0.25rem' }}
-                      >
-                        書類を確認する
-                      </a>
-                      {(item as any).parental_consent_name && (
-                        <div style={{ fontSize: '0.75rem', backgroundColor: 'rgba(212, 175, 55, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                          <div>保護者: {(item as any).parental_consent_name}</div>
-                          <div>連絡先: {(item as any).parental_consent_contact}</div>
+                      {item.role === 'casting' ? (
+                        <div style={{ fontSize: '0.8rem', maxWidth: '300px' }}>
+                          <div style={{ fontWeight: 600 }}>{t('admin.biz_content')}:</div>
+                          <div style={{ marginBottom: '0.25rem' }}>{item.company_description}</div>
+                          <div style={{ fontWeight: 600 }}>{t('admin.contact')}:</div>
+                          <div>{item.contact_info}</div>
                         </div>
+                      ) : (
+                        <>
+                          <a 
+                            href={(item as any).verification_doc_url} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            style={{ color: 'var(--accent)', textDecoration: 'underline', display: 'block', marginBottom: '0.25rem' }}
+                          >
+                            {t('admin.view_doc')}
+                          </a>
+                          {(item as any).parental_consent_name && (
+                            <div style={{ fontSize: '0.75rem', backgroundColor: 'rgba(212, 175, 55, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                              <div>{t('admin.parent')}: {(item as any).parental_consent_name}</div>
+                              <div>{t('admin.contact')}: {(item as any).parental_consent_contact}</div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </td>
                     <td style={tdStyle}>
@@ -185,14 +221,14 @@ const AdminDashboard: React.FC = () => {
                           className="btn btn-primary" 
                           style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
                         >
-                          <Check size={14} /> 承認
+                          <Check size={14} /> {t('admin.approve_btn')}
                         </button>
                         <button 
-                          onClick={() => handleUpdateStatus(item.id, 'none', 'pending')} 
+                          onClick={() => handleUpdateStatus(item.id, 'rejected', 'pending')} 
                           className="btn" 
                           style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
                         >
-                          <X size={14} /> 却下
+                          <X size={14} /> {t('admin.reject_btn')}
                         </button>
                       </div>
                     </td>
@@ -206,35 +242,32 @@ const AdminDashboard: React.FC = () => {
             <thead>
               <tr style={{ backgroundColor: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
                 <th style={thStyle}>{t('admin.th_name')}</th>
-                <th style={thStyle}>{t('admin.th_location')}</th>
+                <th style={thStyle}>{t('admin.th_location')} / ID</th>
                 <th style={thStyle}>{t('admin.th_status')}</th>
                 <th style={thStyle}>{t('admin.th_actions')}</th>
               </tr>
             </thead>
             <tbody>
-              {agencies.length === 0 ? (
-                <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>{t('admin.no_agencies')}</td></tr>
+              {(activeTab === 'agencies' ? agencies : castingCompanies).length === 0 ? (
+                <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>{t('admin.no_data')}</td></tr>
               ) : (
-                agencies.map(agency => (
-                  <tr key={agency.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                (activeTab === 'agencies' ? agencies : castingCompanies).map(item => (
+                  <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={tdStyle}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <img src={agency.avatar_url || 'https://via.placeholder.com/40'} alt="" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
+                        <img src={item.avatar_url || 'https://via.placeholder.com/40'} alt="" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
                         <div>
-                          <div style={{ fontWeight: 600 }}>{agency.full_name || agency.name}</div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{agency.id}</div>
+                          <div style={{ fontWeight: 600 }}>{item.full_name || item.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.role === 'casting' ? (item as any).representative_name : ''}</div>
                         </div>
                       </div>
                     </td>
                     <td style={tdStyle}>
-                      <div>{agency.location || t('mypage.not_set')}</div>
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
-                        {agency.instagram_url && <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>IG</span>}
-                        {agency.x_url && <span style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>X</span>}
-                      </div>
+                      <div>{item.location || t('mypage.not_set')}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.id}</div>
                     </td>
                     <td style={tdStyle}>
-                      {agency.verification_status === 'verified' ? (
+                      {item.verification_status === 'verified' ? (
                         <span style={badgeStyle('#10b981')}><ShieldCheck size={12} /> {t('offer.status_approved')}</span>
                       ) : (
                         <span style={badgeStyle('var(--text-muted)')}><ShieldAlert size={12} /> {t('admin.status_unverified')}</span>
@@ -242,9 +275,9 @@ const AdminDashboard: React.FC = () => {
                     </td>
                     <td style={tdStyle}>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {agency.verification_status !== 'verified' ? (
+                        {item.verification_status !== 'verified' ? (
                           <button 
-                            onClick={() => handleUpdateStatus(agency.id, 'verified', 'agencies')} 
+                            onClick={() => handleUpdateStatus(item.id, 'verified', activeTab)} 
                             className="btn btn-primary" 
                             style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
                           >
@@ -252,7 +285,7 @@ const AdminDashboard: React.FC = () => {
                           </button>
                         ) : (
                           <button 
-                            onClick={() => handleUpdateStatus(agency.id, 'none', 'agencies')} 
+                            onClick={() => handleUpdateStatus(item.id, 'none', activeTab)} 
                             className="btn" 
                             style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
                           >
@@ -260,7 +293,7 @@ const AdminDashboard: React.FC = () => {
                           </button>
                         )}
                         <button 
-                          onClick={() => window.open(`/detail/agency/${agency.id}`, '_blank')}
+                          onClick={() => window.open(`/detail/${item.role}/${item.id}`, '_blank')}
                           className="btn btn-outline" 
                           style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
                         >

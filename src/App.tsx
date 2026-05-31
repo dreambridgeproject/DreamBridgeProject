@@ -6,6 +6,10 @@ import BottomNav from './components/BottomNav';
 import LandingPage from './pages/LandingPage';
 import { LoginPage, SignupPage } from './pages/AuthPages';
 import MyPage from './pages/MyPage';
+import JobsPage from './pages/JobsPage';
+import JobManagementPage from './pages/JobManagementPage';
+import AgencyTalentManagementPage from './pages/AgencyTalentManagementPage';
+import JobApplicationsPage from './pages/JobApplicationsPage';
 import SearchPage from './pages/SearchPage';
 import DetailPage from './pages/DetailPage';
 import OffersPage from './pages/OffersPage';
@@ -48,8 +52,13 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup/:type" element={<SignupPage />} />
                 <Route path="/mypage" element={<MyPage />} />
+                <Route path="/jobs" element={<JobsPage />} />
+                <Route path="/jobs/manage" element={<JobManagementPage />} />
+                <Route path="/agency/talents" element={<AgencyTalentManagementPage />} />
+                <Route path="/jobs/applications" element={<JobApplicationsPage />} />
                 <Route path="/search/talent" element={<SearchPage type="talent" />} />
                 <Route path="/search/agencies" element={<SearchPage type="agency" />} />
+                <Route path="/search/casting" element={<SearchPage type="casting" />} />
                 <Route path="/detail/:type/:id" element={<DetailPage />} />
                 <Route path="/offers" element={<OffersPage />} />
                 <Route path="/chat" element={<ChatPage />} />

@@ -42,9 +42,9 @@ const SubscriptionPage: React.FC = () => {
               <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{t('sub.free_plan')}</h2>
               <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>¥0</div>
               <ul style={featureListStyle}>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Profile Creation</li>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Receive Offers</li>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Unlimited Chat</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> {t('sub.feature_profile')}</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> {t('sub.feature_receive_offers')}</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> {t('sub.feature_chat_unlimited')}</li>
               </ul>
               <button className="btn btn-outline" style={{ width: '100%', marginTop: 'auto' }} disabled>{t('sub.current_plan')}</button>
             </div>
@@ -61,9 +61,9 @@ const SubscriptionPage: React.FC = () => {
               <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{t('sub.agency_free')}</h2>
               <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>¥0</div>
               <ul style={featureListStyle}>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> <strong>Up to 3 offers/mo</strong></li>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Talent Search</li>
-                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> Basic Chat</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> <strong>{t('sub.feature_offers_limit')}</strong></li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> {t('sub.feature_talent_search')}</li>
+                <li style={featureItemStyle}><Check size={18} color="var(--accent)" /> {t('sub.feature_chat_basic')}</li>
               </ul>
               <button className="btn btn-outline" style={{ width: '100%', marginTop: 'auto' }} disabled>{t('sub.current_plan')}</button>
             </div>

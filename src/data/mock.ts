@@ -1,7 +1,15 @@
-import type { Talent, Agency, Genre } from '../types';
+import type { Talent, Agency, CastingCompany, Genre, SkillTag, Job, JobApplication } from '../types';
 
 export const GENRES: Genre[] = [
-  'アイドル', 'モデル', '俳優', '歌手', '声優', 'ダンサー', 'インフルエンサー', 'クリエイター', 'ライバー'
+  'アイドル', 'モデル', '俳優', '歌手', '声優', 'ダンサー', 'インフルエンサー', 'クリエイター', 'ライバー', 'お笑い', 'アナウンサー'
+];
+
+export const SKILL_TAGS: SkillTag[] = [
+  '俳優', '声優', '舞台', 
+  'ファッション', '広告', 'グラビア', 
+  '歌手', 'アイドル', 'バンド', 
+  'ライバー', 'YouTuber', 'TikToker', 
+  'ダンサー', 'お笑い', 'アナウンサー'
 ];
 
 export const mockTalents: Talent[] = [
@@ -15,6 +23,8 @@ export const mockTalents: Talent[] = [
     location: '東京都',
     skills: 'ダンス, 歌唱',
     genres: ['アイドル', 'ダンサー'],
+    affiliation_status: 'unaffiliated',
+    skill_tags: ['アイドル', 'ダンサー', '歌手'],
     bio: '誰かの背中を押せるようなアイドルを目指しています！',
     photos: ['https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop'],
     videos: ['https://www.youtube.com/embed/dQw4w9WgXcQ'],
@@ -33,6 +43,8 @@ export const mockTalents: Talent[] = [
     location: '大阪府',
     skills: '殺陣, ピアノ',
     genres: ['俳優', 'モデル'],
+    affiliation_status: 'affiliated',
+    skill_tags: ['俳優', '舞台', '広告'],
     bio: '心に響く芝居ができる俳優になりたいです。',
     photos: [],
     videos: [],
@@ -51,6 +63,8 @@ export const mockTalents: Talent[] = [
     location: '福岡県',
     skills: '語学 (英語), 編集',
     genres: ['インフルエンサー', 'モデル'],
+    affiliation_status: 'freelance',
+    skill_tags: ['YouTuber', 'TikToker', 'ファッション'],
     bio: '等身大の自分を発信して、多くの人にハッピーを届けたいです。',
     photos: [],
     videos: [],
@@ -125,5 +139,64 @@ export const mockAgencies: Agency[] = [
     photos: [],
     videos: [],
     audios: []
+  }
+];
+
+export const mockCastingCompanies: CastingCompany[] = [
+  {
+    id: 'c1',
+    role: 'casting',
+    name: 'メディアイノベーション制作',
+    full_name: 'メディアイノベーション制作',
+    avatar_url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=400&fit=crop',
+    genres: [],
+    location: '東京都港区',
+    company_description: 'テレビ番組やWeb広告の制作をメインに行っています。',
+    contact_info: 'contact@media-inn.example.com',
+    plan: 'standard',
+    verification_status: 'verified',
+    blocked_user_ids: [],
+    photos: [],
+    videos: [],
+    audios: []
+  }
+];
+
+export const mockJobs: Job[] = [
+  {
+    id: 'j1',
+    castingId: 'c1',
+    title: '新作Webドラマ メインキャスト募集',
+    skillTags: ['俳優', '舞台'],
+    reward: '30,000円〜',
+    location: '都内近郊',
+    deadline: '2024-06-30',
+    description: '20代の男女、演技経験のある方を募集します。',
+    status: 'open',
+    isPublic: true,
+    createdAt: '2024-05-20'
+  },
+  {
+    id: 'j2',
+    castingId: 'c1',
+    title: 'アパレルブランド 秋物ルックモデル',
+    skillTags: ['ファッション', '広告'],
+    reward: '50,000円',
+    location: '東京都',
+    deadline: '2024-07-15',
+    description: '10代後半〜20代前半の女性モデルを募集しています。',
+    status: 'open',
+    isPublic: true,
+    createdAt: '2024-05-25'
+  }
+];
+
+export const mockJobApplications: JobApplication[] = [
+  {
+    id: 'ja1',
+    jobId: 'j1',
+    talentId: 't1',
+    status: 'pending',
+    appliedAt: '2024-05-22'
   }
 ];

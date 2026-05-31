@@ -32,14 +32,37 @@ const ChatPage: React.FC = () => {
 
   // Helper to get partner info
   const getPartnerInfo = (offer: any) => {
-    const partnerId = offer.senderId === currentUser.id ? offer.receiverId : offer.senderId;
-    const isPartnerTalent = offer.senderId === currentUser.id ? (role === 'agency') : (offer.senderRole === 'talent');
+    const participants: any[] = [];
     
-    const partner = isPartnerTalent 
+    // In a 3-party mediated chat:
+    // senderId = Casting
+    // receiverId = Talent
+    // mediatorId = Agency
+    
+    const partnerId = offer.senderId === currentUser.id ? offer.receiverId : offer.senderId;
+    const isPartnerTalent = offer.senderId === currentUser.id ? (role === 'agency' || role === 'casting') : (offer.senderRole === 'talent');
+    
+    // Simple 2-party fallback
+    let partner = isPartnerTalent 
       ? mockTalents.find(t => t.id === partnerId) 
       : mockAgencies.find(a => a.id === partnerId);
     
-    return { partner, isPartnerTalent };
+    // Handle mediated offer (3-party)
+    if (offer.mediator_id) {
+      const casting = mockAgencies.find(a => a.id === offer.senderId) || mockTalents.find(t => t.id === offer.senderId);
+      const talent = mockTalents.find(t => t.id === offer.receiverId);
+      const agency = mockAgencies.find(a => a.id === offer.mediator_id);
+      
+      return { 
+        isMediated: true,
+        casting,
+        talent,
+        agency,
+        partner: currentUser.id === offer.senderId ? talent : (currentUser.id === offer.receiverId ? casting : { name: `${casting?.name} & ${talent?.name}` })
+      };
+    }
+    
+    return { partner, isPartnerTalent, isMediated: false };
   };
 
   const handleSend = () => {
@@ -106,7 +129,7 @@ const ChatPage: React.FC = () => {
           ) : (
             <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow)', overflow: 'hidden', border: '1px solid var(--border)' }}>
               {approvedOffers.length > 0 ? approvedOffers.map(offer => {
-                const { partner, isPartnerTalent } = getPartnerInfo(offer);
+                const { partner, isPartnerTalent, isMediated }: any = getPartnerInfo(offer);
                 if (!partner) return null;
                 const lastMsg = messages.filter(m => m.offerId === offer.id).slice(-1)[0];
                 const unreadCount = messages.filter(m => m.offerId === offer.id && m.unread && m.senderId !== currentUser.id).length;
@@ -125,13 +148,16 @@ const ChatPage: React.FC = () => {
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--surface)'}
                   >
                     <img 
-                      src={isPartnerTalent ? (partner as any).icon : (partner as any).logo} 
+                      src={isPartnerTalent ? (partner as any).avatar_url : (partner as any).avatar_url} 
                       alt={partner.name} 
-                      style={{ width: '56px', height: '56px', borderRadius: isPartnerTalent ? '50%' : 'var(--radius-sm)', objectFit: 'cover' }}
+                      style={{ width: '56px', height: '56px', borderRadius: (isPartnerTalent || isMediated) ? '50%' : 'var(--radius-sm)', objectFit: 'cover' }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{partner.name}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{partner.name}</h3>
+                          {isMediated && <span style={{ fontSize: '0.6rem', backgroundColor: 'var(--accent)', color: 'var(--secondary)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{t('chat.mediated_badge')}</span>}
+                        </div>
                         {lastMsg && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -169,7 +195,7 @@ const ChatPage: React.FC = () => {
   }
 
   // Talk screen
-  const { partner, isPartnerTalent } = getPartnerInfo(currentOffer);
+  const { partner, isPartnerTalent, isMediated, casting, talent, agency }: any = getPartnerInfo(currentOffer);
   if (!partner) return <div className="container" style={{ color: 'var(--text-main)' }}>{t('chat.not_found')}</div>;
 
   return (
@@ -189,11 +215,14 @@ const ChatPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link to="/chat" style={{ color: 'var(--text-muted)' }}><ChevronLeft size={24} /></Link>
           <img 
-            src={isPartnerTalent ? (partner as any).icon : (partner as any).logo} 
+            src={partner.avatar_url || 'https://via.placeholder.com/40'} 
             alt={partner.name} 
-            style={{ width: '40px', height: '40px', borderRadius: isPartnerTalent ? '50%' : 'var(--radius-sm)', objectFit: 'cover' }}
+            style={{ width: '40px', height: '40px', borderRadius: (isPartnerTalent || isMediated) ? '50%' : 'var(--radius-sm)', objectFit: 'cover' }}
           />
-          <h2 style={{ fontSize: '1.125rem', color: 'var(--text-main)' }}>{partner.name}</h2>
+          <div>
+            <h2 style={{ fontSize: '1.125rem', color: 'var(--text-main)', margin: 0 }}>{partner.name}</h2>
+            {isMediated && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{t('chat.mediated_info').replace('{agency}', agency?.name || '').replace('{casting}', casting?.name || '').replace('{talent}', talent?.name || '')}</div>}
+          </div>
         </div>
         <button style={{ background: 'none', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><MoreVertical size={20} /></button>
       </header>
@@ -215,6 +244,11 @@ const ChatPage: React.FC = () => {
           const isMine = msg.senderId === currentUser.id;
           const isSystem = msg.senderId === 'system';
 
+          // For 3-party, we need to know who sent it
+          const sender = isMediated 
+            ? (msg.senderId === casting?.id ? casting : (msg.senderId === talent?.id ? talent : agency))
+            : partner;
+
           if (isSystem) {
             return (
               <div key={msg.id} style={{ textAlign: 'center' }}>
@@ -234,12 +268,13 @@ const ChatPage: React.FC = () => {
             }}>
               {!isMine && (
                 <img 
-                  src={isPartnerTalent ? (partner as any).icon : (partner as any).logo} 
+                  src={sender?.avatar_url || 'https://via.placeholder.com/32'} 
                   alt="" 
-                  style={{ width: '32px', height: '32px', borderRadius: isPartnerTalent ? '50%' : 'var(--radius-sm)', objectFit: 'cover', marginBottom: '4px' }}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', marginBottom: '4px' }}
                 />
               )}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
+                {!isMine && isMediated && <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginLeft: '0.25rem', marginBottom: '0.1rem' }}>{sender?.name}</span>}
                 <div style={{ 
                   maxWidth: '70vw',
                   padding: '0.75rem 1rem', 
@@ -257,7 +292,7 @@ const ChatPage: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
                   {isMine && !msg.unread && (
-                    <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 'bold' }}>既読</span>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 'bold' }}>{t('chat.read')}</span>
                   )}
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

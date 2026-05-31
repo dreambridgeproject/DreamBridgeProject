@@ -34,9 +34,59 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
   const [likes, setLikes] = useState<string[]>([]);
-  const [offers] = useState<Offer[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  const fetchOffers = async (userId: string, userRole: UserRole) => {
+    let query = supabase.from('offers').select('*');
+    
+    if (userRole === 'agency') {
+      query = query.or(`sender_id.eq.${userId},receiver_id.eq.${userId},mediator_id.eq.${userId}`);
+    } else {
+      query = query.or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+    }
+
+    const { data } = await query.order('timestamp', { ascending: false });
+    if (data) {
+      setOffers(data.map((o: any) => ({
+        id: o.id,
+        senderId: o.sender_id,
+        receiverId: o.receiver_id,
+        senderRole: o.sender_role || 'casting',
+        status: o.status,
+        timestamp: o.timestamp,
+        lastMessage: o.last_message,
+        mediatorId: o.mediator_id
+      })));
+    }
+  };
+
+  const fetchMessages = async (userId: string) => {
+    // This is a bit complex since we need messages for all relevant offers
+    // For now, let's fetch messages for all offers the user is part of
+    const { data: offerData } = await supabase.from('offers').select('id').or(`sender_id.eq.${userId},receiver_id.eq.${userId},mediator_id.eq.${userId}`);
+    
+    if (offerData && offerData.length > 0) {
+      const offerIds = offerData.map(o => o.id);
+      const { data: msgData } = await supabase
+        .from('messages')
+        .select('*')
+        .in('offer_id', offerIds)
+        .order('timestamp', { ascending: true });
+      
+      if (msgData) {
+        setMessages(msgData.map((m: any) => ({
+          id: m.id,
+          offerId: m.offer_id,
+          senderId: m.sender_id,
+          text: m.text,
+          timestamp: m.timestamp,
+          unread: m.unread
+        })));
+      }
+    }
+  };
 
   const fetchProfile = async (userId: string, metadata?: any) => {
     console.log('Fetching profile for:', userId);
@@ -50,7 +100,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (error && error.code === 'PGRST116') {
         console.log('Profile not found, creating new one...');
         const rawRole = metadata?.role || 'talent';
-        const role: UserRole = (rawRole === 'agency' || rawRole === 'talent') ? rawRole : 'talent';
+        const role: UserRole = (rawRole === 'agency' || rawRole === 'talent' || rawRole === 'casting') ? rawRole as UserRole : 'talent';
 
         const newProfile = {
           id: userId,
@@ -61,8 +111,15 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
           videos: [],
           audios: [],
           plan: 'free',
-          verification_status: 'none',
-          blocked_user_ids: []
+          verification_status: (role === 'agency' || role === 'casting') ? 'reviewing' : 'none',
+          blocked_user_ids: [],
+          // New fields
+          company_description: metadata?.company_description || '',
+          contact_info: metadata?.contact_info || '',
+          representative_name: metadata?.representative_name || '',
+          affiliation_status: metadata?.affiliation_status || (role === 'talent' ? 'unaffiliated' : undefined),
+          agency_id: metadata?.agency_id || null,
+          accept_external_offers: role === 'talent' ? true : undefined
         };
         
         const { data: createdData, error: createError } = await supabase
@@ -98,7 +155,12 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
           const profile = await fetchProfile(session.user.id, session.user.user_metadata);
           if (mounted) {
             setCurrentUser(profile);
-            setRole(profile?.role || null);
+            const userRole = profile?.role || null;
+            setRole(userRole);
+            if (userRole) {
+              fetchOffers(session.user.id, userRole);
+              fetchMessages(session.user.id);
+            }
           }
         }
       } catch (err) {
@@ -116,7 +178,12 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
         const profile = await fetchProfile(session.user.id, session.user.user_metadata);
         if (mounted) {
           setCurrentUser(profile);
-          setRole(profile?.role || null);
+          const userRole = profile?.role || null;
+          setRole(userRole);
+          if (userRole) {
+            fetchOffers(session.user.id, userRole);
+            fetchMessages(session.user.id);
+          }
         }
       } else {
         if (mounted) {

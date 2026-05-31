@@ -51,12 +51,13 @@ const LandingPage: React.FC = () => {
             lineHeight: 1.1,
             marginBottom: '1.5rem',
             letterSpacing: '-0.02em',
-            textShadow: '0 4px 20px rgba(0,0,0,0.5)'
+            textShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            wordBreak: language === 'ja' ? 'keep-all' : 'normal'
           }}>
-            {language === 'ja' ? (
-              <>夢とチャンスを<br /><span style={{ color: 'var(--accent)' }}>ダイレクト</span>に繋ぐ</>
-            ) : (
-              <>Connecting Dreams and <span style={{ color: 'var(--accent)' }}>Opportunities</span> Directly</>
+            {t('landing.hero.title').split(/(ダイレクト|Directly)/).map((part, i) => 
+              (part === 'ダイレクト' || part === 'Directly') 
+                ? <React.Fragment key={i}><br /><span style={{ color: 'var(--accent)', display: 'inline-block' }}>{part}</span></React.Fragment> 
+                : <span key={i} style={{ display: 'inline-block' }}>{part}</span>
             )}
           </h1>
           <p style={{
@@ -70,9 +71,7 @@ const LandingPage: React.FC = () => {
             wordBreak: language === 'ja' ? 'keep-all' : 'normal',
             overflowWrap: 'anywhere'
           }}>
-            {language === 'ja' ? (
-              <>志望者・ライバー・クリエイターと<br />事務所が直接つながる、<br />次世代のマッチングプラットフォーム</>
-            ) : t('landing.hero.subtitle')}
+            {t('landing.hero.subtitle')}
           </p>          <div style={{ 
             display: 'flex', 
             gap: '1rem', 
@@ -94,6 +93,13 @@ const LandingPage: React.FC = () => {
             >
               {t('landing.hero.agency_signup')}
             </button>
+            <button 
+              onClick={() => navigate('/signup/casting')} 
+              className="btn btn-outline" 
+              style={{ padding: '1.25rem 2rem', fontSize: '1.125rem', minWidth: '200px', borderColor: 'var(--accent)', color: 'var(--accent)' }}
+            >
+              {t('auth.casting_signup')}
+            </button>
           </div>
         </div>
         
@@ -106,22 +112,28 @@ const LandingPage: React.FC = () => {
       <section style={{ padding: '4rem 1rem' }}>
         <div className="container">
           <h2 style={{ textAlign: 'center', fontSize: 'clamp(1.5rem, 6vw, 2rem)', marginBottom: '3rem' }}>
-            あらゆる<span style={{ color: 'var(--accent)' }}>才能</span>を募集中
+            {t('landing.audience_title').split(/(才能|機会|talents|opportunities)/).map((part, i) => 
+              (part === '才能' || part === '機会' || part === 'talents' || part === 'opportunities') 
+                ? <span key={i} style={{ color: 'var(--accent)' }}>{part}</span> 
+                : part
+            )}
           </h2>
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
             gap: '1rem',
-            maxWidth: '1000px',
+            maxWidth: '1200px',
             margin: '0 auto'
           }}>
             {[
-              { icon: <Star />, label: 'アイドル' },
-              { icon: <Camera />, label: 'モデル' },
-              { icon: <Play />, label: '俳優' },
-              { icon: <Mic2 />, label: '歌手' },
-              { icon: <Tv />, label: 'ライバー' },
-              { icon: <Palette />, label: 'クリエイター' }
+              { icon: <Star />, label: t('genre.idol') },
+              { icon: <Camera />, label: t('genre.model') },
+              { icon: <Play />, label: t('genre.actor') },
+              { icon: <Mic2 />, label: t('genre.singer') },
+              { icon: <Tv />, label: t('genre.liver') },
+              { icon: <Palette />, label: t('genre.creator') },
+              { icon: <ShieldCheck />, label: t('landing.genre.talent_agency') },
+              { icon: <Zap />, label: t('genre.production') }
             ].map((item, i) => (
               <div key={i} style={{ 
                 backgroundColor: 'var(--surface)', 
@@ -146,8 +158,8 @@ const LandingPage: React.FC = () => {
       <section style={{ padding: '5rem 1rem', backgroundColor: 'var(--surface)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.5rem)', marginBottom: '1rem' }}>DreamBridgeが選ばれる理由</h2>
-            <p style={{ color: 'var(--text-muted)' }}>従来のスカウトやオーディションの常識を覆します。</p>
+            <h2 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.5rem)', marginBottom: '1rem' }}>{t('landing.features.title')}</h2>
+            <p style={{ color: 'var(--text-muted)' }}>{t('landing.features.subtitle')}</p>
           </div>
 
           <div style={{ 
@@ -157,23 +169,23 @@ const LandingPage: React.FC = () => {
           }}>
             <div style={featureCardStyle}>
               <div style={iconBoxStyle}><Zap size={24} /></div>
-              <h3 style={{ marginBottom: '1rem' }}>ダイレクトオファー</h3>
+              <h3 style={{ marginBottom: '1rem' }}>{t('landing.features.direct.title')}</h3>
               <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontSize: '0.9375rem' }}>
-                中間業者を通さず、事務所からあなたへ直接オファーが届きます。チャンスを逃さず、スピーディーに展開。
+                {t('landing.features.direct.desc')}
               </p>
             </div>
             <div style={featureCardStyle}>
               <div style={iconBoxStyle}><ShieldCheck size={24} /></div>
-              <h3 style={{ marginBottom: '1rem' }}>安心・安全の認証制度</h3>
+              <h3 style={{ marginBottom: '1rem' }}>{t('landing.features.secure.title')}</h3>
               <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontSize: '0.9375rem' }}>
-                登録事務所は運営が厳重に審査。未成年の方も保護者の同意システムで安心して活動できます。
+                {t('landing.features.secure.desc')}
               </p>
             </div>
             <div style={featureCardStyle}>
               <div style={iconBoxStyle}><MessageSquare size={24} /></div>
-              <h3 style={{ marginBottom: '1rem' }}>ポートフォリオ機能</h3>
+              <h3 style={{ marginBottom: '1rem' }}>{t('landing.features.location.title')}</h3>
               <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontSize: '0.9375rem' }}>
-                写真、動画、音声を自由にアップロード。あなたの個性を120%伝えるポートフォリオを簡単に作成。
+                {t('landing.features.location.desc')}
               </p>
             </div>
           </div>
@@ -190,16 +202,18 @@ const LandingPage: React.FC = () => {
         color: 'white'
       }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 6vw, 3rem)', marginBottom: '1.5rem' }}>今すぐベータ版に参加</h2>
+          <h2 style={{ fontSize: 'clamp(1.75rem, 6vw, 3rem)', marginBottom: '1.5rem' }}>{t('landing.cta.title')}</h2>
           <p style={{ fontSize: '1.125rem', marginBottom: '2.5rem', opacity: 0.9 }}>
-            現在、全ての機能を無料でご利用いただけます。この機会にぜひベータ版をお試しください。
+            {language === 'ja' ? (
+              <>現在、全ての機能を無料でご利用いただけます。<br />この機会にぜひベータ版をお試しください。</>
+            ) : t('landing.cta.desc')}
           </p>
           <button 
             onClick={() => navigate('/signup/talent')} 
             className="btn btn-primary" 
             style={{ padding: '1.25rem 3rem', fontSize: '1.125rem', borderRadius: '3rem' }}
           >
-            無料で登録を始める
+            {t('landing.cta.btn')}
           </button>
         </div>
       </section>
@@ -214,12 +228,12 @@ const LandingPage: React.FC = () => {
         <div className="container">
           <div style={{ marginBottom: '2rem' }}>
             <h2 style={{ color: 'var(--accent)', fontSize: '1.5rem', fontWeight: 900, marginBottom: '1rem' }}>DreamBridge</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>夢とチャンスをダイレクトに繋ぐマッチングプラットフォーム</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('footer.desc')}</p>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-            <Link to="/legal#tos" style={{ color: 'var(--text-main)', fontSize: '0.875rem', textDecoration: 'none' }}>利用規約</Link>
-            <Link to="/legal#privacy" style={{ color: 'var(--text-main)', fontSize: '0.875rem', textDecoration: 'none' }}>プライバシーポリシー</Link>
-            <Link to="/legal#specified" style={{ color: 'var(--text-main)', fontSize: '0.875rem', textDecoration: 'none' }}>特定商取引法に基づく表記</Link>
+            <Link to="/legal#tos" style={{ color: 'var(--text-main)', fontSize: '0.875rem', textDecoration: 'none' }}>{t('legal.tos')}</Link>
+            <Link to="/legal#privacy" style={{ color: 'var(--text-main)', fontSize: '0.875rem', textDecoration: 'none' }}>{t('legal.privacy')}</Link>
+            <Link to="/legal#specified" style={{ color: 'var(--text-main)', fontSize: '0.875rem', textDecoration: 'none' }}>{t('legal.tokusho')}</Link>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>© 2026 DreamBridge All rights reserved.</p>
         </div>

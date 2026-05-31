@@ -152,9 +152,9 @@ const VerificationPage: React.FC = () => {
                 </div>
                 {isMinor && (
                   <div style={{ backgroundColor: 'rgba(212, 175, 55, 0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--accent)', marginBottom: '1.5rem' }}>
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 700, marginBottom: '1rem' }}>【未成年の方】保護者の同意が必要です</p>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 700, marginBottom: '1rem' }}>{t('verify.minor_notice')}</p>
                     <div style={inputGroupStyle}>
-                      <label style={labelStyle}>保護者氏名</label>
+                      <label style={labelStyle}>{t('verify.parent_name')}</label>
                       <input 
                         type="text" 
                         placeholder="保護者 太郎" 
@@ -165,7 +165,7 @@ const VerificationPage: React.FC = () => {
                       />
                     </div>
                     <div style={{ ...inputGroupStyle, marginBottom: 0 }}>
-                      <label style={labelStyle}>保護者の連絡先 (電話番号/メール)</label>
+                      <label style={labelStyle}>{t('verify.parent_contact')}</label>
                       <input 
                         type="text" 
                         placeholder="090-xxxx-xxxx" 
@@ -222,7 +222,7 @@ const VerificationPage: React.FC = () => {
             >
               {formData.docUrl ? <CheckCircle2 size={32} color="#10b981" /> : <Upload size={32} />}
               <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-                {isUploading ? t('auth.sending') : formData.docUrl ? 'アップロード完了' : t('verify.upload_box')}
+                {isUploading ? t('auth.sending') : formData.docUrl ? t('verify.upload_complete') : t('verify.upload_box')}
               </p>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('verify.upload_hint')}</span>
               <input 
@@ -258,16 +258,16 @@ const VerificationPage: React.FC = () => {
               </div>
               <div style={reviewItemStyle}>
                 <span>{t('verify.review_doc')}</span>
-                <strong>{formData.docUrl ? 'uploaded_document' : '未完了'}</strong>
+                <strong>{formData.docUrl ? 'uploaded_document' : t('verify.not_completed')}</strong>
               </div>
               {isMinor && (
                 <>
                   <div style={reviewItemStyle}>
-                    <span>保護者名</span>
+                    <span>{t('verify.review_parent_name')}</span>
                     <strong>{formData.parentName}</strong>
                   </div>
                   <div style={reviewItemStyle}>
-                    <span>保護者連絡先</span>
+                    <span>{t('verify.review_parent_contact')}</span>
                     <strong>{formData.parentContact}</strong>
                   </div>
                 </>

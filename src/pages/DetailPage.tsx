@@ -11,12 +11,13 @@ import {
 } from 'lucide-react';
 
 const DetailPage: React.FC = () => {
-  const { id } = useParams<{ type: 'talent' | 'agency'; id: string }>();
+  const { id } = useParams<{ type: 'talent' | 'agency' | 'casting'; id: string }>();
   const { currentUser, role, likes, toggleLike, sendOffer, offers, checkOfferLimit } = useUser();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [agency, setAgency] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isLimitReached, setIsLimitReached] = useState(false);
@@ -32,7 +33,7 @@ const DetailPage: React.FC = () => {
       const reached = await checkOfferLimit();
       setIsLimitReached(reached);
     };
-    if (role === 'agency') checkLimit();
+    if (role === 'agency' || role === 'casting') checkLimit();
   }, [role, checkOfferLimit]);
 
   useEffect(() => {
@@ -44,8 +45,19 @@ const DetailPage: React.FC = () => {
         .eq('id', id)
         .single();
 
-      if (!error) {
+      if (!error && data) {
         setProfile(data as Profile);
+        
+        // Fetch agency if affiliated
+        if (data.agency_id) {
+          const { data: agencyData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.agency_id)
+            .single();
+          if (agencyData) setAgency(agencyData as Profile);
+        }
+
         // Log the view for AI analytics
         logView(currentUser?.id, id!, role || 'guest');
       }
@@ -65,24 +77,44 @@ const DetailPage: React.FC = () => {
   );
 
   const isTalentDetail = profile.role === 'talent';
+  const isAffiliated = isTalentDetail && profile.affiliation_status === 'affiliated' && profile.agency_id;
+  const isCastingDetail = profile.role === 'casting';
   
   // Restricted offer for free agencies
-  const canSendOffer = role === 'talent' || (role === 'agency' && (currentUser as any)?.plan !== 'free');
+  const canSendOffer = role === 'talent' || (role === 'agency' && (currentUser as any)?.plan !== 'free') || role === 'casting';
+  const isOfferBlockedByAgency = isAffiliated && profile.accept_external_offers === false;
 
-  const handleOffer = () => {
+  const handleOffer = async () => {
     if (!currentUser) {
       navigate('/login');
       return;
     }
-    if (!canSendOffer) return;
+    if (!canSendOffer || isOfferBlockedByAgency) return;
     if (existingOffer) return;
     if (isLimitReached) {
-      alert('今月のオファー送信上限（3件）に達しました。');
+      alert(t('detail.limit_reached'));
       return;
     }
-    sendOffer(profile.id);
-    alert(t('detail.offer_sent'));
-    setIsLimitReached(true);
+
+    if (isAffiliated) {
+      // Mediated offer
+      const { error } = await supabase.from('offers').insert({
+        sender_id: currentUser.id,
+        receiver_id: profile.id,
+        mediator_id: profile.agency_id,
+        status: 'pending'
+      });
+      if (error) {
+        alert(t('job.apply_fail') + ': ' + error.message);
+      } else {
+        alert(t('detail.offer_mediated_sent'));
+        setIsLimitReached(true);
+      }
+    } else {
+      sendOffer(profile.id);
+      alert(t('detail.offer_sent'));
+      setIsLimitReached(true);
+    }
   };
 
   return (
@@ -110,6 +142,11 @@ const DetailPage: React.FC = () => {
                 <ShieldCheck size={14} /> {t('detail.verified')}
               </div>
             )}
+            {isAffiliated && (
+              <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '2rem', fontSize: '0.7rem', fontWeight: 700 }}>
+                {t('mypage.affiliated')}
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button 
@@ -128,15 +165,16 @@ const DetailPage: React.FC = () => {
             <div style={{ flex: 3, position: 'relative' }}>
               <button 
                 onClick={handleOffer}
-                disabled={!!existingOffer || !canSendOffer || isLimitReached}
+                disabled={!!existingOffer || !canSendOffer || isLimitReached || isOfferBlockedByAgency}
                 className="btn btn-primary" 
-                style={{ width: '100%', padding: '1rem', opacity: (existingOffer || !canSendOffer || isLimitReached) ? 0.6 : 1 }}
+                style={{ width: '100%', padding: '1rem', opacity: (existingOffer || !canSendOffer || isLimitReached || isOfferBlockedByAgency) ? 0.6 : 1 }}
               >
-                {!canSendOffer && <Lock size={20} />} {existingOffer ? t('detail.offered') : isLimitReached ? '上限に達しました' : t('detail.send_offer')}
+                {!canSendOffer && <Lock size={20} />} 
+                {existingOffer ? t('detail.offered') : isLimitReached ? t('detail.limit_reached_btn') : isOfferBlockedByAgency ? t('detail.offer_stopped') : isAffiliated ? t('detail.offer_via_agency') : t('detail.send_offer')}
               </button>
-              {(!canSendOffer || isLimitReached) && (
+              {(!canSendOffer || isLimitReached || isOfferBlockedByAgency) && (
                 <p style={{ position: 'absolute', bottom: '-20px', left: 0, right: 0, textAlign: 'center', fontSize: '0.7rem', color: 'var(--accent)' }}>
-                  {isLimitReached ? '今月のオファー上限（3件）に達しています' : t('detail.restricted_offer')}
+                  {isOfferBlockedByAgency ? t('detail.offer_stopped_desc') : isLimitReached ? t('detail.limit_reached_desc') : t('detail.restricted_offer')}
                 </p>
               )}
             </div>
@@ -149,9 +187,17 @@ const DetailPage: React.FC = () => {
             <h1 style={{ fontSize: '2rem' }}>{profile.full_name || profile.name}</h1>
             {profile.verification_status === 'verified' && <ShieldCheck size={24} style={{ color: 'var(--accent)' }} />}
           </div>
-          <p style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-            <MapPin size={20} /> {profile.location || t('mypage.location')}
-          </p>
+          
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+            <p style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <MapPin size={20} /> {profile.location || t('mypage.location')}
+            </p>
+            {isAffiliated && agency && (
+              <p style={{ color: '#3b82f6', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Users size={20} /> {agency.full_name || agency.name} {t('detail.affiliated_with')}
+              </p>
+            )}
+          </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '2rem' }}>
             {profile.genres?.map(g => (
@@ -162,10 +208,19 @@ const DetailPage: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <section>
-              <h2 style={sectionTitleStyle}>{t('detail.bio_title')}</h2>
-              <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.bio || t('detail.no_bio')}</p>
-            </section>
+            {isCastingDetail ? (
+              <section>
+                <h2 style={sectionTitleStyle}>{t('auth.business_content')}</h2>
+                <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.company_description || t('detail.no_bio')}</p>
+                <h2 style={{ ...sectionTitleStyle, marginTop: '2rem' }}>{t('auth.contact_info')}</h2>
+                <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.contact_info || t('detail.no_bio')}</p>
+              </section>
+            ) : (
+              <section>
+                <h2 style={sectionTitleStyle}>{t('detail.bio_title')}</h2>
+                <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.bio || t('detail.no_bio')}</p>
+              </section>
+            )}
 
             {isTalentDetail && (
               <section>

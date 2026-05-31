@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -35,7 +35,7 @@ export const LoginPage: React.FC = () => {
       } else if (data.user) {
         navigate('/mypage');
       }
-    } catch (err: any) {
+    } catch {
       clearTimeout(timeoutId);
       setError(t('auth.login_error'));
       setLoading(false);
@@ -84,17 +84,53 @@ export const LoginPage: React.FC = () => {
 
 export const SignupPage: React.FC = () => {
   const { type } = useParams<{ type: string }>();
+  const [searchParams] = useSearchParams();
+  const invitationId = searchParams.get('invitation');
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  // New fields for Casting
+  const [companyName, setCompanyName] = useState('');
+  const [representativeName, setRepresentativeName] = useState('');
+  const [businessContent, setBusinessContent] = useState('');
+  const [contactInfo, setContactInfo] = useState('');
+
+  // Invitation data
+  const [invitationData, setInvitationData] = useState<any>(null);
+
   const [parentalConsent, setParentalConsent] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isTalent = type === 'talent';
+  useEffect(() => {
+    const fetchInvitation = async () => {
+      if (!invitationId) return;
+      
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .eq('status', 'pending')
+        .single();
+      
+      if (data) {
+        setInvitationData(data);
+        setEmail(data.email);
+      } else if (error) {
+        console.error('Invitation fetch error:', error);
+        setError(t('auth.invitation_invalid'));
+      }
+    };
+    
+    fetchInvitation();
+  }, [invitationId]);
+
+  const resolvedType = invitationId ? 'talent' : type;
+  const isTalent = resolvedType === 'talent';
+  const isCasting = resolvedType === 'casting';
   const age = birthDate ? Math.floor((new Date().getTime() - new Date(birthDate).getTime()) / 3.15576e+10) : 20;
   const isMinor = isTalent && birthDate && age < 18;
 
@@ -107,32 +143,62 @@ export const SignupPage: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signUp({
+    const signupData: any = {
+      role: resolvedType,
+      birth_date: isTalent ? birthDate : undefined,
+      is_minor: isMinor,
+      verification_status: (resolvedType === 'agency' || resolvedType === 'casting') ? 'reviewing' : 'none'
+    };
+
+    if (isCasting) {
+      signupData.full_name = companyName;
+      signupData.representative_name = representativeName;
+      signupData.company_description = businessContent;
+      signupData.contact_info = contactInfo;
+    }
+
+    if (invitationData) {
+      signupData.agency_id = invitationData.agency_id;
+      signupData.affiliation_status = 'affiliated';
+      signupData.full_name = invitationData.name;
+    }
+
+    const { error: signupError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          role: type, // 'talent' or 'agency'
-          birth_date: birthDate,
-          is_minor: isMinor
-        }
+        data: signupData
       }
     });
 
-    if (error) {
-      setError(error.message);
+    if (signupError) {
+      setError(signupError.message);
       setLoading(false);
     } else {
+      if (invitationId) {
+        await supabase
+          .from('invitations')
+          .update({ status: 'accepted' })
+          .eq('id', invitationId);
+      }
       alert(t('auth.signup_success'));
       navigate('/login');
     }
+  };
+
+  const getTitle = () => {
+    if (invitationId) return t('auth.invitation_title');
+    if (type === 'talent') return t('auth.talent_signup');
+    if (type === 'agency') return t('auth.agency_signup');
+    if (type === 'casting') return t('auth.casting_signup');
+    return t('auth.title_signup');
   };
 
   return (
     <div className="container" style={{ padding: '5rem 1rem', maxWidth: '400px' }}>
       <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: 'var(--shadow)' }}>
         <h2 style={{ marginBottom: '1.5rem', textAlign: 'center', color: '#1a1a1a' }}>
-          {type === 'talent' ? t('auth.talent_signup') : t('auth.agency_signup')}
+          {getTitle()}
         </h2>
         {error && <div style={{ color: 'red', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
         <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleSignup}>
@@ -166,6 +232,42 @@ export const SignupPage: React.FC = () => {
             </div>
           )}
 
+          {isCasting && (
+            <>
+              <input 
+                type="text" 
+                placeholder={t('auth.company_name')} 
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
+                required={isCasting}
+              />
+              <input 
+                type="text" 
+                placeholder={t('auth.representative_name')} 
+                value={representativeName}
+                onChange={(e) => setRepresentativeName(e.target.value)}
+                style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
+                required={isCasting}
+              />
+              <textarea 
+                placeholder={t('auth.business_content')} 
+                value={businessContent}
+                onChange={(e) => setBusinessContent(e.target.value)}
+                style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a', minHeight: '80px', resize: 'vertical' }} 
+                required={isCasting}
+              />
+              <input 
+                type="text" 
+                placeholder={t('auth.contact_info')} 
+                value={contactInfo}
+                onChange={(e) => setContactInfo(e.target.value)}
+                style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
+                required={isCasting}
+              />
+            </>
+          )}
+
           {isMinor && (
             <div style={{ backgroundColor: 'rgba(212, 175, 55, 0.1)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--accent)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
@@ -178,7 +280,7 @@ export const SignupPage: React.FC = () => {
                   required 
                 />
                 <label htmlFor="parental-consent" style={{ fontSize: '0.75rem', color: '#1a1a1a', fontWeight: 700, lineHeight: 1.4 }}>
-                  【未成年の方へ】保護者の同意を得て登録していますか？
+                  {t('auth.minor_consent')}
                 </label>
               </div>
             </div>

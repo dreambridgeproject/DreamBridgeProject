@@ -33,11 +33,27 @@ const LegalPage: React.FC = () => {
               <p>この利用規約（以下「本規約」）は、DreamBridge（以下「当サービス」）が提供するサービス「DreamBridge」の利用条件を定めるものです。登録ユーザーの皆さまには、本規約に従って本サービスをご利用いただきます。</p>
               <h3 style={h3Style}>第1条（適用）</h3>
               <p>本規約は、ユーザーとDreamBridgeとの間の本サービスの利用に関わる一切の関係に適用されるものとします。</p>
+              
               <h3 style={h3Style}>第2条（利用登録）</h3>
               <p>1. 登録希望者がDreamBridgeの定める方法によって利用登録を申請し、DreamBridgeがこれを承認することによって、利用登録が完了するものとします。</p>
               <p>2. ユーザーは、本サービスにプロフィール写真を登録した場合、当該写真が本サービス内において他のユーザーに対して表示されることにあらかじめ同意するものとします。</p>
 
-              <h3 style={h3Style}>第4条（本サービスの提供の停止等）</h3>
+              <h3 style={h3Style}>第3条（所属タレントへの接触に関する特則）</h3>
+              <p>1. 制作会社および広告会社（以下「キャスティング会員」）は、本サービスにおいて事務所所属ステータスを持つタレント（以下「所属タレント」）に対し、本サービス上の仲介システム（事務所経由オファー）を利用せずに直接連絡を取ることを固く禁じます。</p>
+              <p>2. 所属タレントへのオファーは、必ず当該タレントを管理する事務所会員の承認を得るものとします。</p>
+              <p>3. 前項に違反し、事務所の承認なしに直接契約や連絡を行ったことが判明した場合、運営は当該会員のアカウントを予告なく即時停止し、将来にわたる利用を禁止する権利を有します。</p>
+
+              <h3 style={h3Style}>第4条（禁止事項）</h3>
+              <p>利用者は、以下の行為を行ってはなりません。</p>
+              <ul>
+                <li>虚偽の情報登録</li>
+                <li>他者へのなりすまし</li>
+                <li>公序良俗に反する行為</li>
+                <li>反社会的勢力への利益供与</li>
+                <li>事務所所属タレントへの直接引き抜き行為</li>
+              </ul>
+
+              <h3 style={h3Style}>第5条（本サービスの提供の停止等）</h3>
               <p>当サービスは、以下のいずれかの事由があると判断した場合、ユーザーに事前に通知することなく本サービスの全部または一部の提供を停止または中断することができるものとします。</p>
               <ul>
                 <li>本サービスに係るコンピュータシステムの保守点検または更新を行う場合</li>
@@ -71,18 +87,24 @@ const LegalPage: React.FC = () => {
               <p>1. Registration is completed when an applicant applies for registration by the method prescribed by DreamBridge and DreamBridge approves the application.</p>
               <p>2. By registering a profile picture on this Service, the user consents in advance to the display of said picture to other users within the Service.</p>
 
-              <h3 style={h3Style}>Article 3 (Prohibited Actions)</h3>
+              <h3 style={h3Style}>Article 3 (Special Provisions Regarding Contact with Affiliated Talents)</h3>
+              <p>1. Casting members (production companies, advertising agencies, etc.) are strictly prohibited from contacting talents with "affiliated" status directly without using the mediation system (Offer via Agency) on this Service.</p>
+              <p>2. Offers to affiliated talents must always obtain the approval of the agency member managing the talent.</p>
+              <p>3. If it is found that a direct contract or contact was made without the agency's approval in violation of the preceding paragraph, DreamBridge reserves the right to immediately suspend the member's account without notice and prohibit future use.</p>
+
+              <h3 style={h3Style}>Article 4 (Prohibited Actions)</h3>
               <p>In using the Service, users shall not engage in any of the following acts:</p>
               <ul>
                 <li>Acts that violate laws or public order and morals</li>
                 <li>Acts related to criminal activities</li>
-                <li>Acts that infringe on copyrights, trademarks, or other intellectual property rights (including the act of reposting or publishing screenshots of the Service on external SNS or websites without the permission of the right holder)</li>
+                <li>Acts that infringe on copyrights, trademarks, or other intellectual property rights</li>
                 <li>Acts that destroy or interfere with the functions of DreamBridge's or third parties' servers or networks</li>
+                <li>Direct solicitation or "poaching" of affiliated talents</li>
                 <li>Commercial use of information obtained through the Service</li>
                 <li>Other acts deemed inappropriate by DreamBridge</li>
               </ul>
 
-              <h3 style={h3Style}>Article 4 (Suspension of the Service)</h3>
+              <h3 style={h3Style}>Article 5 (Suspension of the Service)</h3>
               <p>The Service may suspend or interrupt the provision of all or part of the Service without prior notice to users in any of the following cases:</p>
               <ul>
                 <li>When performing maintenance, inspection, or updating of computer systems related to the Service</li>
@@ -91,19 +113,19 @@ const LegalPage: React.FC = () => {
                 <li>In other cases where the Service deems it difficult to provide the Service</li>
               </ul>
 
-              <h3 style={h3Style}>Article 5 (Change and Termination of Service)</h3>
+              <h3 style={h3Style}>Article 6 (Change and Termination of Service)</h3>
               <p>The Service may change the contents of the Service or stop or terminate the provision of the Service without notice to users, and shall not be liable for any damages caused to users as a result.</p>
 
-              <h3 style={h3Style}>Article 6 (Disclaimer of Warranties and Liability)</h3>
+              <h3 style={h3Style}>Article 7 (Disclaimer of Warranties and Liability)</h3>
               <p>1. The Service does not guarantee, either expressly or impliedly, that the Service is free from factual or legal defects (including defects related to safety, reliability, accuracy, completeness, effectiveness, fitness for a particular purpose, security, errors, bugs, or infringement of rights).</p>
               <p>2. The Service shall not be liable for any damages caused to users arising from the Service. However, if the contract between the Service and the user (including these Terms) regarding the Service constitutes a consumer contract as defined in the Consumer Contract Act, this disclaimer shall not apply.</p>
               <p>3. Even in the case stipulated in the proviso of the preceding paragraph, the Service shall not be liable for damages arising from special circumstances among damages caused to users due to default or tort by the Service's negligence (excluding gross negligence).</p>
 
-              <h3 style={h3Style}>Article 7 (Ownership of Posted Content)</h3>
+              <h3 style={h3Style}>Article 8 (Ownership of Posted Content)</h3>
               <p>1. The copyright of text, images, and other content posted or uploaded by users using the Service ("Posted Content") shall belong to the user.</p>
               <p>2. The user grants the Service a free license to use (including reproduction, adaptation, public transmission, etc.) Posted Content to the extent necessary for the operation, improvement, and promotion of the Service.</p>
 
-              <h3 style={h3Style}>Article 8 (Governing Law and Jurisdiction)</h3>
+              <h3 style={h3Style}>Article 9 (Governing Law and Jurisdiction)</h3>
               <p>1. The laws of Japan shall be the governing law for the interpretation of these Terms.</p>
               <p>2. In the event of any dispute regarding the Service, the court having jurisdiction over the location of the Service shall be the exclusive agreed jurisdiction.</p>
             </>

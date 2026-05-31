@@ -1,6 +1,17 @@
-export type UserRole = 'talent' | 'agency';
+export type UserRole = 'talent' | 'agency' | 'casting';
 
-export type Genre = 'アイドル' | 'モデル' | '俳優' | '歌手' | '声優' | 'ダンサー' | 'インフルエンサー' | 'クリエイター' | 'ライバー';
+export type Genre = 'アイドル' | 'モデル' | '俳優' | '歌手' | '声優' | 'ダンサー' | 'インフルエンサー' | 'クリエイター' | 'ライバー' | 'お笑い' | 'アナウンサー' | '文化人' | 'スポーツ選手' | 'MC' | 'ナレーター';
+
+export type AffiliationStatus = 'unaffiliated' | 'affiliated' | 'freelance' | 'reviewing';
+
+export type SkillCategory = '演技' | 'モデル' | '音楽' | '配信' | 'その他';
+
+export type SkillTag = 
+  | '俳優' | '声優' | '舞台' 
+  | 'ファッション' | '広告' | 'グラビア' 
+  | '歌手' | 'アイドル' | 'バンド' 
+  | 'ライバー' | 'YouTuber' | 'TikToker' 
+  | 'ダンサー' | 'お笑い' | 'アナウンサー';
 
 export interface Profile {
   id: string;
@@ -23,13 +34,45 @@ export interface Profile {
   videos: string[];
   audios: string[];
   plan: 'free' | 'standard' | 'pro' | 'enterprise' | 'premium';
-  verification_status: 'none' | 'reviewing' | 'verified';
+  verification_status: 'none' | 'reviewing' | 'verified' | 'rejected';
   blocked_user_ids: string[];
+  // New fields for Casting & Agency-Mediation
+  affiliation_status?: AffiliationStatus;
+  agency_id?: string;
+  accept_external_offers?: boolean;
+  skill_tags?: SkillTag[];
+  company_description?: string;
+  contact_info?: string;
+  representative_name?: string;
+  gender?: 'male' | 'female' | 'other' | 'none';
 }
 
 // Backward compatibility for existing components
 export type Talent = Profile;
 export type Agency = Profile;
+export type CastingCompany = Profile;
+
+export interface Job {
+  id: string;
+  castingId: string;
+  title: string;
+  skillTags: SkillTag[];
+  reward: string;
+  location: string;
+  deadline: string;
+  description: string;
+  status: 'open' | 'closed';
+  isPublic: boolean;
+  createdAt: string;
+}
+
+export interface JobApplication {
+  id: string;
+  jobId: string;
+  talentId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  appliedAt: string;
+}
 
 export interface Offer {
   id: string;
@@ -39,6 +82,17 @@ export interface Offer {
   status: 'pending' | 'approved' | 'declined';
   timestamp: string;
   lastMessage?: string;
+  mediatorId?: string; // Agency ID for mediated offers
+}
+
+export interface Invitation {
+  id: string;
+  agencyId: string;
+  email: string;
+  name: string;
+  status: 'pending' | 'accepted' | 'expired';
+  preFilledData: Partial<Profile>;
+  createdAt: string;
 }
 
 export interface ChatMessage {

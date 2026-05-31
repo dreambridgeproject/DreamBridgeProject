@@ -8,7 +8,7 @@ import { Search, MapPin, User, Users, Camera } from 'lucide-react';
 import type { Profile } from '../types';
 
 interface SearchPageProps {
-  type: 'talent' | 'agency';
+  type: 'talent' | 'agency' | 'casting';
 }
 
 const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
@@ -24,7 +24,9 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
     maxAge: '',
     minHeight: '',
     maxHeight: '',
-    location: ''
+    location: '',
+    gender: '',
+    affiliation: ''
   });
   
   const initialGenre = 'すべて';
@@ -58,7 +60,18 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
     { key: '映像', label: t('genre.agency_movie') }
   ];
 
-  const genres = type === 'talent' ? talentGenres : agencyGenres;
+  const castingGenres = [
+    { key: 'すべて', label: t('genre.all') },
+    { key: '映画', label: t('genre.movie') },
+    { key: 'ドラマ', label: t('genre.drama') },
+    { key: 'CM', label: t('genre.cm') },
+    { key: '舞台', label: t('genre.agency_stage') },
+    { key: 'Web広告', label: t('genre.web_ad') },
+    { key: '雑誌', label: t('genre.magazine') },
+    { key: 'イベント', label: t('genre.event') }
+  ];
+
+  const genres = type === 'talent' ? talentGenres : (type === 'agency' ? agencyGenres : castingGenres);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -88,6 +101,8 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
       if (filters.minHeight) q = q.gte('height', parseInt(filters.minHeight));
       if (filters.maxHeight) q = q.lte('height', parseInt(filters.maxHeight));
       if (filters.location) q = q.eq('location', filters.location);
+      if (filters.gender) q = q.eq('gender', filters.gender);
+      if (filters.affiliation) q = q.eq('affiliation_status', filters.affiliation);
 
       const { data, error } = await q.order('id', { ascending: false });
 
@@ -117,8 +132,8 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
     <div className="container" style={{ padding: '2rem 1rem' }}>
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-main)' }}>
-          {type === 'talent' ? <Users size={32} /> : <User size={32} />}
-          {type === 'talent' ? t('mypage.search_talent') : t('mypage.search_agency')}
+          {type === 'talent' ? <Users size={32} /> : (type === 'casting' ? <Users size={32} /> : <User size={32} />)}
+          {type === 'talent' ? t('mypage.search_talent') : (type === 'casting' ? t('search.title_casting') : t('mypage.search_agency'))}
         </h1>
 
         <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -141,7 +156,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
             onClick={() => setShowFilters(!showFilters)}
             style={{ alignSelf: 'flex-start', background: 'none', color: 'var(--accent)', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
           >
-            {showFilters ? '▲ フィルターを閉じる' : '▼ 詳細フィルターを表示'}
+            {showFilters ? t('search.filter_close') : t('search.filter_open')}
           </button>
 
           {showFilters && (
@@ -156,34 +171,66 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
             }}>
               {type === 'talent' && (
                 <div style={filterGroupStyle}>
-                  <label style={filterLabelStyle}>年齢範囲</label>
+                  <label style={filterLabelStyle}>{t('search.gender')}</label>
+                  <select 
+                    value={filters.gender} 
+                    onChange={e => setFilters({...filters, gender: e.target.value})}
+                    style={filterInputStyle}
+                  >
+                    <option value="">{t('genre.all')}</option>
+                    <option value="male">{t('search.gender_male')}</option>
+                    <option value="female">{t('search.gender_female')}</option>
+                    <option value="other">{t('search.gender_other')}</option>
+                  </select>
+                </div>
+              )}
+
+              {type === 'talent' && (
+                <div style={filterGroupStyle}>
+                  <label style={filterLabelStyle}>{t('mypage.affiliation')}</label>
+                  <select 
+                    value={filters.affiliation} 
+                    onChange={e => setFilters({...filters, affiliation: e.target.value})}
+                    style={filterInputStyle}
+                  >
+                    <option value="">{t('genre.all')}</option>
+                    <option value="unaffiliated">{t('search.affiliation_only')}</option>
+                    <option value="freelance">{t('mypage.freelance')}</option>
+                    <option value="affiliated">{t('mypage.affiliated')}</option>
+                  </select>
+                </div>
+              )}
+
+              {type === 'talent' && (
+                <div style={filterGroupStyle}>
+                  <label style={filterLabelStyle}>{t('search.age_range')}</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input type="number" placeholder="最小" value={filters.minAge} onChange={e => setFilters({...filters, minAge: e.target.value})} style={filterInputStyle} />
+                    <input type="number" placeholder={t('search.min')} value={filters.minAge} onChange={e => setFilters({...filters, minAge: e.target.value})} style={filterInputStyle} />
                     <span>〜</span>
-                    <input type="number" placeholder="最大" value={filters.maxAge} onChange={e => setFilters({...filters, maxAge: e.target.value})} style={filterInputStyle} />
+                    <input type="number" placeholder={t('search.max')} value={filters.maxAge} onChange={e => setFilters({...filters, maxAge: e.target.value})} style={filterInputStyle} />
                   </div>
                 </div>
               )}
               
               {type === 'talent' && (
                 <div style={filterGroupStyle}>
-                  <label style={filterLabelStyle}>身長範囲 (cm)</label>
+                  <label style={filterLabelStyle}>{t('search.height_range')}</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input type="number" placeholder="最小" value={filters.minHeight} onChange={e => setFilters({...filters, minHeight: e.target.value})} style={filterInputStyle} />
+                    <input type="number" placeholder={t('search.min')} value={filters.minHeight} onChange={e => setFilters({...filters, minHeight: e.target.value})} style={filterInputStyle} />
                     <span>〜</span>
-                    <input type="number" placeholder="最大" value={filters.maxHeight} onChange={e => setFilters({...filters, maxHeight: e.target.value})} style={filterInputStyle} />
+                    <input type="number" placeholder={t('search.max')} value={filters.maxHeight} onChange={e => setFilters({...filters, maxHeight: e.target.value})} style={filterInputStyle} />
                   </div>
                 </div>
               )}
 
               <div style={filterGroupStyle}>
-                <label style={filterLabelStyle}>地域</label>
+                <label style={filterLabelStyle}>{t('job.location_label')}</label>
                 <select 
                   value={filters.location} 
                   onChange={e => setFilters({...filters, location: e.target.value})}
                   style={filterInputStyle}
                 >
-                  <option value="">すべての地域</option>
+                  <option value="">{t('search.location_all')}</option>
                   {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
                 </select>
               </div>
@@ -192,13 +239,13 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
                 <button 
                   type="button" 
                   onClick={() => {
-                    setFilters({ minAge: '', maxAge: '', minHeight: '', maxHeight: '', location: '' });
+                    setFilters({ minAge: '', maxAge: '', minHeight: '', maxHeight: '', location: '', gender: '', affiliation: '' });
                     setSelectedGenre('すべて');
                   }}
                   className="btn btn-outline" 
                   style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', width: '100%' }}
                 >
-                  クリア
+                  {t('search.clear')}
                 </button>
               </div>
             </div>
