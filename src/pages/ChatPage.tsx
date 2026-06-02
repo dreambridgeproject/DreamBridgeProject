@@ -32,8 +32,6 @@ const ChatPage: React.FC = () => {
 
   // Helper to get partner info
   const getPartnerInfo = (offer: any) => {
-    const participants: any[] = [];
-    
     // In a 3-party mediated chat:
     // senderId = Casting
     // receiverId = Talent
@@ -43,7 +41,7 @@ const ChatPage: React.FC = () => {
     const isPartnerTalent = offer.senderId === currentUser.id ? (role === 'agency' || role === 'casting') : (offer.senderRole === 'talent');
     
     // Simple 2-party fallback
-    let partner = isPartnerTalent 
+    const partner = isPartnerTalent 
       ? mockTalents.find(t => t.id === partnerId) 
       : mockAgencies.find(a => a.id === partnerId);
     

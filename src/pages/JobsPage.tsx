@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
@@ -22,7 +22,7 @@ const JobsPage: React.FC = () => {
 
   const locations = ['東京都', '神奈川県', '大阪府', '愛知県', '福岡県', '北海道', '千葉県', '埼玉県', '兵庫県', '京都府'];
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setLoading(true);
     const now = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
@@ -50,11 +50,11 @@ const JobsPage: React.FC = () => {
     }
     if (error) console.error('Error fetching jobs:', error);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchJobs();
-  }, []);
+  }, [fetchJobs]);
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -112,7 +112,6 @@ const JobsPage: React.FC = () => {
   };
 
   const isCasting = currentUser?.role === 'casting';
-  const isVerified = currentUser?.verification_status === 'verified';
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
@@ -309,6 +308,7 @@ const JobsPage: React.FC = () => {
 };
 
 const PostJobModal: React.FC<{ onClose: () => void, onRefresh: () => void }> = ({ onClose, onRefresh }) => {
+  const { t } = useLanguage();
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -341,9 +341,9 @@ const PostJobModal: React.FC<{ onClose: () => void, onRefresh: () => void }> = (
 
     setLoading(false);
     if (error) {
-      alert('投稿に失敗しました: ' + error.message);
+      alert(t('job.post_fail') + ': ' + error.message);
     } else {
-      alert('案件を投稿しました！');
+      alert(t('job.post_success'));
       onRefresh();
       onClose();
     }

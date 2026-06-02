@@ -13,7 +13,7 @@ const BottomNav: React.FC = () => {
 
   const navItemStyle = ({ isActive }: { isActive: boolean }) => ({
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     alignItems: 'center',
     gap: '0.25rem',
     color: isActive ? 'var(--accent)' : 'var(--text-muted)',

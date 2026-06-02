@@ -3,16 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { 
-  Users, UserPlus, Mail, Check, X, 
-  ToggleLeft, ToggleRight, MessageSquare, 
-  ExternalLink, ClipboardList, Clock
+  UserPlus, Check, X, 
+  ToggleLeft, ToggleRight, 
+  Clock
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Profile, Invitation, Offer } from '../types';
 
 const AgencyTalentManagementPage: React.FC = () => {
   const { t } = useLanguage();
-  const { user, currentUser } = useUser();
+  const { user } = useUser();
   const navigate = useNavigate();
   
   const [talents, setTalents] = useState<Profile[]>([]);
@@ -84,7 +84,7 @@ const AgencyTalentManagementPage: React.FC = () => {
     }
   };
 
-  const handleApproveOffer = async (offerId: string, talentId: string) => {
+  const handleApproveOffer = async (offerId: string) => {
     const { error } = await supabase
       .from('offers')
       .update({ status: 'approved' })
@@ -251,7 +251,7 @@ const AgencyTalentManagementPage: React.FC = () => {
                   </div>
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                     <button 
-                      onClick={() => handleApproveOffer(offer.id, offer.receiverId)}
+                      onClick={() => handleApproveOffer(offer.id)}
                       className="btn btn-primary" 
                       style={{ flex: 1, backgroundColor: '#10b981' }}
                     >

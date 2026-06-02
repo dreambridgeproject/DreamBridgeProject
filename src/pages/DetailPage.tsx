@@ -7,7 +7,7 @@ import { logView } from '../lib/analytics';
 import type { Profile } from '../types';
 import { 
   Heart, MapPin, ChevronLeft, ShieldCheck, 
-  Lock, Image, Video, Music, Instagram, Twitter
+  Lock, Image, Video, Music, Instagram, Twitter, Users
 } from 'lucide-react';
 
 const DetailPage: React.FC = () => {
@@ -77,7 +77,7 @@ const DetailPage: React.FC = () => {
   );
 
   const isTalentDetail = profile.role === 'talent';
-  const isAffiliated = isTalentDetail && profile.affiliation_status === 'affiliated' && profile.agency_id;
+  const isAffiliated = !!(isTalentDetail && profile.affiliation_status === 'affiliated' && profile.agency_id);
   const isCastingDetail = profile.role === 'casting';
   
   // Restricted offer for free agencies

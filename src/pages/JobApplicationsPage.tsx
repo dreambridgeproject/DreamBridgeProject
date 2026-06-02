@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
-import { Briefcase, Clock, CheckCircle, XCircle, ChevronRight, MessageSquare } from 'lucide-react';
+import { Briefcase, Clock, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Job } from '../types';
 

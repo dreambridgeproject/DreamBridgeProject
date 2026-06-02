@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { 
   LogOut, Edit, MapPin, Search, Star, MessageSquare,
-  Image, Shield, Briefcase,
+  Image, Shield, Briefcase, Users,
   CreditCard, ExternalLink, Save, X, Camera, Plus, Trash2, Instagram, Twitter
 } from 'lucide-react';
 

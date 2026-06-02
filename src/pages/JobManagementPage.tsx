@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
-import { Briefcase, User, Check, X, ChevronRight, MessageSquare, ExternalLink } from 'lucide-react';
+import { User, Check, X, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Job, Profile } from '../types';
 
@@ -18,7 +18,7 @@ interface ExtendedApplication {
 
 const JobManagementPage: React.FC = () => {
   const { t } = useLanguage();
-  const { user, currentUser } = useUser();
+  const { user } = useUser();
   const navigate = useNavigate();
   const [myJobs, setMyJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<ExtendedApplication[]>([]);
