@@ -4,7 +4,7 @@ import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 import { mockTalents, mockAgencies } from '../data/mock';
 import { Send, ChevronLeft, MoreVertical, ClipboardList, MessageSquare, AlertTriangle, ShieldAlert } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import OffersPage from './OffersPage';
 
 const ChatPage: React.FC = () => {
   const { offerId } = useParams<{ offerId?: string }>();
@@ -19,7 +19,15 @@ const ChatPage: React.FC = () => {
   const [showMenu, setShowMenu] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // ... (auto-scroll useEffect unchanged)
+  // Auto-scroll chat to bottom and Mark as Read
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+    if (offerId) {
+      markMessagesAsRead(offerId);
+    }
+  }, [messages, offerId, markMessagesAsRead]);
 
   const handleReport = async () => {
     if (!currentUser || !currentOffer) return;
