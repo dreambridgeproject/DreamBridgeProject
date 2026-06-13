@@ -71,7 +71,10 @@ const OffersPage: React.FC = () => {
                 className="btn" 
                 style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
               >
-                {t('offer.approve_btn')}
+                {role === 'talent' 
+                  ? (offer.senderRole === 'agency' ? t('scout.approve_btn') : t('direct_offer.approve_btn'))
+                  : t('agency_offer.approve_btn')
+                }
               </button>
               <button 
                 onClick={() => updateOfferStatus(offer.id, 'declined')}

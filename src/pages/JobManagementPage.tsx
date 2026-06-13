@@ -228,7 +228,7 @@ const JobManagementPage: React.FC = () => {
                   {app.status === 'pending' && (
                     <>
                       <button onClick={() => handleUpdateStatus(app.id, 'approved', app.talent_id)} className="btn btn-primary" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: '#10b981' }}>
-                        <Check size={16} /> {t('job.manage_approve_btn')}
+                        <Check size={16} /> {app.talent.affiliation_status === 'affiliated' ? t('job.manage_approve_btn_casting') : t('job.manage_approve_btn_free')}
                       </button>
                       <button onClick={() => handleUpdateStatus(app.id, 'rejected', app.talent_id)} className="btn" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
                         <X size={16} /> {t('job.manage_reject_btn')}

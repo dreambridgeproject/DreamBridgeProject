@@ -36,6 +36,7 @@ export interface Profile {
   plan: 'free' | 'standard' | 'pro' | 'enterprise' | 'premium';
   verification_status: 'none' | 'reviewing' | 'verified' | 'rejected';
   blocked_user_ids: string[];
+  reported_by_ids?: string[]; // IDs of users who reported this profile
   // New fields for Casting & Agency-Mediation
   affiliation_status?: AffiliationStatus;
   agency_id?: string;
@@ -113,4 +114,14 @@ export interface Notification {
   link: string;
   timestamp: string;
   read: boolean;
+}
+
+export interface Report {
+  id: string;
+  reporterId: string;
+  targetId: string;
+  reason: 'inappropriate_content' | 'harassment' | 'scam' | 'offline_meeting' | 'other';
+  description: string;
+  timestamp: string;
+  status: 'pending' | 'resolved' | 'dismissed';
 }
