@@ -57,6 +57,11 @@ const Header: React.FC = () => {
 
         {currentUser ? (
           <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+            {currentUser.role === 'agency' && (
+              <Link to="/agency/talents" style={{ color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: 600, display: window.innerWidth < 768 ? 'none' : 'block' }}>
+                {t('mypage.talent_mgmt')}
+              </Link>
+            )}
             <Link to="/notifications" title={t('header.notifications')} style={{ position: 'relative', color: 'var(--text-main)' }}>
               <Bell size={24} />
               {unreadNotificationsCount > 0 && (

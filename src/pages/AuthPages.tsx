@@ -19,7 +19,7 @@ export const LoginPage: React.FC = () => {
     const timeoutId = setTimeout(() => {
       setLoading(false);
       setError(t('auth.timeout_error'));
-    }, 15000);
+    }, 45000);
 
     try {
       const { data, error: loginError } = await supabase.auth.signInWithPassword({

@@ -13,8 +13,10 @@ const AdminDashboard: React.FC = () => {
   const [agencies, setAgencies] = useState<Profile[]>([]);
   const [castingCompanies, setCastingCompanies] = useState<Profile[]>([]);
   const [pending, setPending] = useState<Profile[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+  const [banned, setBanned] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'agencies' | 'casting' | 'pending'>('pending');
+  const [activeTab, setActiveTab] = useState<'agencies' | 'casting' | 'pending' | 'reports' | 'banned'>('pending');
 
   const fetchData = async () => {
     setLoading(true);
@@ -24,6 +26,7 @@ const AdminDashboard: React.FC = () => {
       .from('profiles')
       .select('*')
       .eq('role', 'agency')
+      .eq('is_banned', false)
       .order('id', { ascending: false });
 
     // Fetch all casting companies
@@ -31,6 +34,7 @@ const AdminDashboard: React.FC = () => {
       .from('profiles')
       .select('*')
       .eq('role', 'casting')
+      .eq('is_banned', false)
       .order('id', { ascending: false });
 
     // Fetch all profiles pending review
@@ -40,9 +44,24 @@ const AdminDashboard: React.FC = () => {
       .eq('verification_status', 'reviewing')
       .order('id', { ascending: false });
 
+    // Fetch reports with profile info
+    const { data: reportData } = await supabase
+      .from('reports')
+      .select('*, reporter:reporter_id(full_name, name), target:target_id(full_name, name, role)')
+      .order('created_at', { ascending: false });
+
+    // Fetch banned users
+    const { data: bannedData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('is_banned', true)
+      .order('id', { ascending: false });
+
     if (agencyData) setAgencies(agencyData as Profile[]);
     if (castingData) setCastingCompanies(castingData as Profile[]);
     if (pendingData) setPending(pendingData as Profile[]);
+    if (reportData) setReports(reportData);
+    if (bannedData) setBanned(bannedData as Profile[]);
     
     setLoading(false);
   };
@@ -77,7 +96,7 @@ const AdminDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleUpdateStatus = async (id: string, status: 'verified' | 'none' | 'rejected', list: 'agencies' | 'casting' | 'pending') => {
+  const handleUpdateStatus = async (id: string, status: 'verified' | 'none' | 'rejected', _list: 'agencies' | 'casting' | 'pending') => {
     const { error } = await supabase
       .from('profiles')
       .update({ verification_status: status })
@@ -86,15 +105,38 @@ const AdminDashboard: React.FC = () => {
     if (error) {
       alert(t('admin.update_fail'));
     } else {
-      if (list === 'agencies') {
-        setAgencies(prev => prev.map(a => a.id === id ? { ...a, verification_status: status as any } : a));
-      } else if (list === 'casting') {
-        setCastingCompanies(prev => prev.map(c => c.id === id ? { ...c, verification_status: status as any } : c));
-      } else {
-        setPending(prev => prev.filter(p => p.id !== id));
-        fetchData(); // Refresh lists
-      }
+      fetchData();
       alert(status === 'verified' ? t('admin.update_success') : t('admin.revoke_success'));
+    }
+  };
+
+  const handleBanUser = async (id: string, isBanned: boolean) => {
+    if (!window.confirm(isBanned ? 'このユーザーを停止（BAN）しますか？' : 'アカウント停止を解除しますか？')) return;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_banned: isBanned })
+      .eq('id', id);
+
+    if (error) {
+      alert('操作に失敗しました');
+    } else {
+      fetchData();
+      alert(isBanned ? 'ユーザーを停止しました' : '停止を解除しました');
+    }
+  };
+
+  const handleResolveReport = async (reportId: string, status: 'resolved' | 'dismissed') => {
+    const { error } = await supabase
+      .from('reports')
+      .update({ status })
+      .eq('id', reportId);
+
+    if (error) {
+      alert('操作に失敗しました');
+    } else {
+      fetchData();
+      alert('通報を処理しました');
     }
   };
 
@@ -159,6 +201,34 @@ const AdminDashboard: React.FC = () => {
           }}
         >
           {t('admin.tab_casting')} ({castingCompanies.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('reports')}
+          style={{ 
+            padding: '1rem 2rem', 
+            background: 'none', 
+            border: 'none', 
+            color: activeTab === 'reports' ? 'var(--accent)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'reports' ? '2px solid var(--accent)' : 'none',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >
+          通報 ({reports.filter(r => r.status === 'pending').length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('banned')}
+          style={{ 
+            padding: '1rem 2rem', 
+            background: 'none', 
+            border: 'none', 
+            color: activeTab === 'banned' ? 'var(--accent)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'banned' ? '2px solid var(--accent)' : 'none',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >
+          停止済み ({banned.length})
         </button>
       </div>
 
@@ -231,6 +301,98 @@ const AdminDashboard: React.FC = () => {
                           <X size={14} /> {t('admin.reject_btn')}
                         </button>
                       </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        ) : activeTab === 'reports' ? (
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+            <thead>
+              <tr style={{ backgroundColor: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
+                <th style={thStyle}>通報者</th>
+                <th style={thStyle}>対象ユーザー</th>
+                <th style={thStyle}>理由 / 内容</th>
+                <th style={thStyle}>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reports.length === 0 ? (
+                <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>通報はありません</td></tr>
+              ) : (
+                reports.map(report => (
+                  <tr key={report.id} style={{ borderBottom: '1px solid var(--border)', opacity: report.status !== 'pending' ? 0.6 : 1 }}>
+                    <td style={tdStyle}>
+                      <div>{report.reporter?.full_name || report.reporter?.name || '削除済みユーザー'}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{report.reporter_id}</div>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{ fontWeight: 600 }}>{report.target?.full_name || report.target?.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{report.target?.role}</div>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{ fontWeight: 700, color: 'var(--error)' }}>{report.reason}</div>
+                      <p style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>{report.description}</p>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(report.created_at).toLocaleString()}</div>
+                    </td>
+                    <td style={tdStyle}>
+                      {report.status === 'pending' ? (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            onClick={() => handleBanUser(report.target_id, true)} 
+                            className="btn" 
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', backgroundColor: '#ef4444', color: 'white' }}
+                          >
+                            BAN
+                          </button>
+                          <button 
+                            onClick={() => handleResolveReport(report.id, 'resolved')} 
+                            className="btn btn-outline" 
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                          >
+                            解決済みにする
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{report.status}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        ) : activeTab === 'banned' ? (
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+            <thead>
+              <tr style={{ backgroundColor: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
+                <th style={thStyle}>ユーザー名</th>
+                <th style={thStyle}>ID / 役割</th>
+                <th style={thStyle}>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {banned.length === 0 ? (
+                <tr><td colSpan={3} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>停止中のユーザーはいません</td></tr>
+              ) : (
+                banned.map(user => (
+                  <tr key={user.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={tdStyle}>
+                      <div style={{ fontWeight: 600 }}>{user.full_name || user.name}</div>
+                    </td>
+                    <td style={tdStyle}>
+                      <div>{user.id}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{user.role}</div>
+                    </td>
+                    <td style={tdStyle}>
+                      <button 
+                        onClick={() => handleBanUser(user.id, false)} 
+                        className="btn btn-outline" 
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', color: 'var(--success)', borderColor: 'var(--success)' }}
+                      >
+                        解除する
+                      </button>
                     </td>
                   </tr>
                 ))

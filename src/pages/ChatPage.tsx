@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
-import { mockTalents, mockAgencies } from '../data/mock';
 import { Send, ChevronLeft, MoreVertical, ClipboardList, MessageSquare, AlertTriangle, ShieldAlert } from 'lucide-react';
 import OffersPage from './OffersPage';
+import { supabase } from '../lib/supabase';
+import type { Profile } from '../types';
 
 const ChatPage: React.FC = () => {
   const { offerId } = useParams<{ offerId?: string }>();
-  const { currentUser, offers, messages, sendMessage, role, markMessagesAsRead } = useUser();
+  const { currentUser, offers, messages, sendMessage, markMessagesAsRead } = useUser();
   const { t } = useLanguage();
   const [inputText, setInputText] = useState('');
   const [activeTab, setActiveTab] = useState<'chats' | 'offers'>('chats');
@@ -34,16 +35,26 @@ const ChatPage: React.FC = () => {
     setIsReporting(true);
     const { partner }: any = getPartnerInfo(currentOffer);
     
-    // In a real app, this would be a Supabase call
-    console.log('Reporting user:', partner.id, reportReason, reportDesc);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    alert(t('safety.report_success'));
-    setShowReportModal(false);
-    setIsReporting(false);
-    setShowMenu(false);
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .insert({
+          reporter_id: currentUser.id,
+          target_id: partner.id,
+          reason: reportReason,
+          description: reportDesc
+        });
+
+      if (error) throw error;
+      
+      alert(t('safety.report_success'));
+      setShowReportModal(false);
+      setIsReporting(false);
+      setShowMenu(false);
+    } catch (err: any) {
+      alert('通報に失敗しました: ' + err.message);
+      setIsReporting(false);
+    }
   };
 
   if (!currentUser) return null;
@@ -52,33 +63,44 @@ const ChatPage: React.FC = () => {
   const currentOffer = offers.find(o => o.id === offerId && o.status === 'approved');
   const chatMessages = messages.filter(m => m.offerId === offerId);
 
+  const [partnerProfiles, setPartnerProfiles] = useState<Record<string, Profile>>({});
+
+  useEffect(() => {
+    const fetchPartnerProfiles = async () => {
+      const partnerIds = [...new Set(offers.map(o => o.senderId === currentUser.id ? o.receiverId : o.senderId))];
+      const mediatorIds = [...new Set(offers.map(o => (o as any).mediator_id).filter(Boolean))];
+      const allIds = [...new Set([...partnerIds, ...mediatorIds])];
+      
+      if (allIds.length === 0) return;
+
+      const { data } = await supabase.from('profiles').select('*').in('id', allIds);
+      if (data) {
+        const profileMap = data.reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
+        setPartnerProfiles(profileMap);
+      }
+    };
+    fetchPartnerProfiles();
+  }, [offers, currentUser.id]);
+
   // Helper to get partner info
   const getPartnerInfo = (offer: any) => {
-    // In a 3-party mediated chat:
-    // senderId = Casting
-    // receiverId = Talent
-    // mediatorId = Agency
-    
     const partnerId = offer.senderId === currentUser.id ? offer.receiverId : offer.senderId;
-    const isPartnerTalent = offer.senderId === currentUser.id ? (role === 'agency' || role === 'casting') : (offer.senderRole === 'talent');
-    
-    // Simple 2-party fallback
-    const partner = isPartnerTalent 
-      ? mockTalents.find(t => t.id === partnerId) 
-      : mockAgencies.find(a => a.id === partnerId);
+    const partner = partnerProfiles[partnerId];
+    const isPartnerTalent = partner?.role === 'talent';
     
     // Handle mediated offer (3-party)
-    if (offer.mediator_id) {
-      const casting = mockAgencies.find(a => a.id === offer.senderId) || mockTalents.find(t => t.id === offer.senderId);
-      const talent = mockTalents.find(t => t.id === offer.receiverId);
-      const agency = mockAgencies.find(a => a.id === offer.mediator_id);
+    const mediatorId = (offer as any).mediator_id || offer.mediatorId;
+    if (mediatorId) {
+      const casting = partnerProfiles[offer.senderId];
+      const talent = partnerProfiles[offer.receiverId];
+      const agency = partnerProfiles[mediatorId];
       
       return { 
         isMediated: true,
         casting,
         talent,
         agency,
-        partner: currentUser.id === offer.senderId ? talent : (currentUser.id === offer.receiverId ? casting : { name: `${casting?.name} & ${talent?.name}` })
+        partner: currentUser.id === offer.senderId ? talent : (currentUser.id === offer.receiverId ? casting : { name: `${casting?.full_name || casting?.name || 'Casting'} & ${talent?.full_name || talent?.name || 'Talent'}` })
       };
     }
     
@@ -87,6 +109,18 @@ const ChatPage: React.FC = () => {
 
   const handleSend = () => {
     if (!inputText.trim() || !offerId) return;
+    
+    // Curfew check for minors - Warning only
+    const now = new Date();
+    const hour = now.getHours();
+    const isMinor = currentUser.age && currentUser.age < 18;
+    const isCurfew = isMinor && (hour >= 22 || hour < 5);
+
+    if (isCurfew) {
+      // Show warning but proceed
+      console.log('Late night chat warning for minor');
+    }
+
     sendMessage(offerId, inputText);
     setInputText('');
   };
@@ -168,14 +202,14 @@ const ChatPage: React.FC = () => {
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--surface)'}
                   >
                     <img 
-                      src={isPartnerTalent ? (partner as any).avatar_url : (partner as any).avatar_url} 
-                      alt={partner.name} 
+                      src={partner.avatar_url || 'https://via.placeholder.com/56'} 
+                      alt={partner.full_name || partner.name} 
                       style={{ width: '56px', height: '56px', borderRadius: (isPartnerTalent || isMediated) ? '50%' : 'var(--radius-sm)', objectFit: 'cover' }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{partner.name}</h3>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{partner.full_name || partner.name}</h3>
                           {isMediated && <span style={{ fontSize: '0.6rem', backgroundColor: 'var(--accent)', color: 'var(--secondary)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{t('chat.mediated_badge')}</span>}
                         </div>
                         {lastMsg && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
@@ -236,12 +270,12 @@ const ChatPage: React.FC = () => {
           <Link to="/chat" style={{ color: 'var(--text-muted)' }}><ChevronLeft size={24} /></Link>
           <img 
             src={partner.avatar_url || 'https://via.placeholder.com/40'} 
-            alt={partner.name} 
+            alt={partner.full_name || partner.name} 
             style={{ width: '40px', height: '40px', borderRadius: (isPartnerTalent || isMediated) ? '50%' : 'var(--radius-sm)', objectFit: 'cover' }}
           />
           <div>
-            <h2 style={{ fontSize: '1.125rem', color: 'var(--text-main)', margin: 0 }}>{partner.name}</h2>
-            {isMediated && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{t('chat.mediated_info').replace('{agency}', agency?.name || '').replace('{casting}', casting?.name || '').replace('{talent}', talent?.name || '')}</div>}
+            <h2 style={{ fontSize: '1.125rem', color: 'var(--text-main)', margin: 0 }}>{partner.full_name || partner.name}</h2>
+            {isMediated && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{t('chat.mediated_info').replace('{agency}', agency?.full_name || agency?.name || '').replace('{casting}', casting?.full_name || casting?.name || '').replace('{talent}', talent?.full_name || talent?.name || '')}</div>}
           </div>
         </div>
         <div style={{ position: 'relative' }}>
@@ -315,6 +349,13 @@ const ChatPage: React.FC = () => {
             <div>
               <div style={{ fontWeight: 800, color: '#ffab00', fontSize: '0.875rem', marginBottom: '0.25rem' }}>{t('safety.minor_warning_title')}</div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-main)', margin: 0, lineHeight: 1.5 }}>{t('safety.minor_warning_body')}</p>
+              
+              {/* Added Curfew Warning */}
+              {(new Date().getHours() >= 22 || new Date().getHours() < 5) && currentUser.age < 18 && (
+                <p style={{ fontSize: '0.75rem', color: '#ffab00', fontWeight: 700, marginTop: '0.5rem' }}>
+                  {t('chat.curfew_notice')}
+                </p>
+              )}
             </div>
           </div>
         )}

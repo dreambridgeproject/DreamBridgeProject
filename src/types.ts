@@ -22,6 +22,7 @@ export interface Profile {
   bio?: string;
   location?: string;
   age?: number;
+  birth_date?: string;
   height?: number;
   weight?: number;
   genres: string[];
@@ -35,7 +36,12 @@ export interface Profile {
   audios: string[];
   plan: 'free' | 'standard' | 'pro' | 'enterprise' | 'premium';
   verification_status: 'none' | 'reviewing' | 'verified' | 'rejected';
+  verification_doc_url?: string;
+  parental_consent_name?: string;
+  parental_consent_contact?: string;
   blocked_user_ids: string[];
+  is_banned?: boolean;
+  favorite_ids?: string[];
   reported_by_ids?: string[]; // IDs of users who reported this profile
   // New fields for Casting & Agency-Mediation
   affiliation_status?: AffiliationStatus;

@@ -42,17 +42,17 @@ const VerificationPage: React.FC = () => {
     setIsUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`; // Folder structure for RLS
 
       const { error: uploadError } = await supabase.storage
-        .from('avatars') // Using avatars bucket for now as we know it exists
+        .from('verification-docs')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
+        .from('verification-docs')
         .getPublicUrl(filePath);
 
       setFormData({ ...formData, docUrl: publicUrl });
@@ -69,7 +69,9 @@ const VerificationPage: React.FC = () => {
     try {
       const updates: any = {
         verification_status: 'reviewing',
-        verification_doc_url: formData.docUrl
+        verification_doc_url: formData.docUrl,
+        birth_date: formData.birthDate,
+        age: age
       };
 
       if (isTalent && isMinor) {
@@ -84,15 +86,22 @@ const VerificationPage: React.FC = () => {
     }
   };
 
-  if (isSubmitted) {
+  if (isSubmitted || currentUser?.verification_status === 'reviewing' || currentUser?.verification_status === 'verified') {
+    const status = isSubmitted ? 'reviewing' : currentUser?.verification_status;
     return (
       <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center', maxWidth: '500px', color: 'var(--text-main)' }}>
-        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', color: '#10b981' }}>
-          <CheckCircle2 size={48} />
+        <div style={{ 
+          backgroundColor: status === 'verified' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(212, 175, 55, 0.1)', 
+          width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', 
+          color: status === 'verified' ? '#10b981' : 'var(--accent)' 
+        }}>
+          {status === 'verified' ? <CheckCircle2 size={48} /> : <AlertCircle size={48} />}
         </div>
-        <h1 style={{ fontSize: '1.75rem', marginBottom: '1rem' }}>{t('verify.success')}</h1>
+        <h1 style={{ fontSize: '1.75rem', marginBottom: '1rem' }}>
+          {status === 'verified' ? t('detail.verified') : t('verify.pending')}
+        </h1>
         <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem' }}>
-          {t('verify.success_desc')}
+          {status === 'verified' ? t('verify.success_desc') : t('verify.pending')}
         </p>
         <button className="btn btn-primary" onClick={() => navigate('/mypage')} style={{ width: '100%' }}>
           {t('detail.back')}

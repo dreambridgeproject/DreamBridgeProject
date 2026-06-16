@@ -24,6 +24,7 @@ interface UserContextType {
   clearNotifications: () => void;
   checkOfferLimit: () => Promise<boolean>;
   markMessagesAsRead: (offerId: string) => Promise<void>;
+  robustInsertOffer: (offerData: any) => Promise<any>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -37,6 +38,33 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  const fetchNotifications = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false })
+      .limit(50);
+    
+    if (error) {
+      console.error('Error fetching notifications:', error);
+      return;
+    }
+
+    if (data) {
+      setNotifications(data.map((n: any) => ({
+        id: n.id,
+        userId: n.user_id,
+        type: n.type,
+        title: n.title,
+        message: n.message,
+        link: n.link,
+        timestamp: n.timestamp,
+        read: n.read
+      })));
+    }
+  };
 
   const fetchOffers = async (userId: string, userRole: UserRole) => {
     let query = supabase.from('offers').select('*');
@@ -88,17 +116,23 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
-  const fetchProfile = async (userId: string, metadata?: any) => {
-    console.log('Fetching profile for:', userId);
+  const fetchProfile = async (userId: string, metadata?: any, retryCount = 0): Promise<any> => {
+    console.log(`Fetching profile for: ${userId} (Attempt: ${retryCount + 1})`);
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('your-project-url')) {
+      console.error('Supabase connection not configured correctly.');
+      return null;
+    }
+    
     try {
-      // Add a simple timeout to the supabase query
       const profilePromise = supabase.from('profiles').select('*').eq('id', userId).single();
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Profile fetch timeout')), 30000));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 60000));
       
       const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
       
       if (error && error.code === 'PGRST116') {
-        console.log('Profile not found, creating new one...');
+        // ... (profile creation logic remains same)
         const rawRole = metadata?.role || 'talent';
         const role: UserRole = (rawRole === 'agency' || rawRole === 'talent' || rawRole === 'casting') ? rawRole as UserRole : 'talent';
 
@@ -113,31 +147,28 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
           plan: 'free',
           verification_status: (role === 'agency' || role === 'casting') ? 'reviewing' : 'none',
           blocked_user_ids: [],
-          // New fields
           company_description: metadata?.company_description || '',
           contact_info: metadata?.contact_info || '',
           representative_name: metadata?.representative_name || '',
           affiliation_status: metadata?.affiliation_status || (role === 'talent' ? 'unaffiliated' : undefined),
           agency_id: metadata?.agency_id || null,
-          accept_external_offers: role === 'talent' ? true : undefined
+          accept_external_offers: role === 'talent' ? true : undefined,
+          gender: 'none'
         };
         
-        const { data: createdData, error: createError } = await supabase
-          .from('profiles')
-          .insert(newProfile)
-          .select()
-          .single();
-          
-        if (createError) {
-          console.error('Profile creation error details:', JSON.stringify(createError));
-          // Return the local profile object so the app can still function
-          return newProfile as any;
-        }
+        const { data: createdData, error: createError } = await supabase.from('profiles').insert(newProfile).select().single();
+        if (createError) return newProfile;
         return createdData;
       }
+
+      if (error) throw error;
       return data;
-    } catch (err) {
-      console.error('fetchProfile unexpected error:', err);
+    } catch (err: any) {
+      if (err.message === 'TIMEOUT' && retryCount < 2) {
+        console.warn('Profile fetch timed out, retrying...');
+        return fetchProfile(userId, metadata, retryCount + 1);
+      }
+      console.error('fetchProfile error:', err);
       return null;
     }
   };
@@ -145,51 +176,85 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   useEffect(() => {
     let mounted = true;
 
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!mounted) return;
+    // Use onAuthStateChange for all auth state management
+    // This handles both initial session and subsequent changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change event:', event);
 
-        if (session?.user) {
-          setUser(session.user);
-          const profile = await fetchProfile(session.user.id, session.user.user_metadata);
-          if (mounted) {
-            setCurrentUser(profile);
-            const userRole = profile?.role || null;
-            setRole(userRole);
-            if (userRole) {
-              fetchOffers(session.user.id, userRole);
-              fetchMessages(session.user.id);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Auth initialization error:', err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    initAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser(session.user);
         const profile = await fetchProfile(session.user.id, session.user.user_metadata);
         if (mounted) {
-          setCurrentUser(profile);
-          const userRole = profile?.role || null;
-          setRole(userRole);
-          if (userRole) {
-            fetchOffers(session.user.id, userRole);
-            fetchMessages(session.user.id);
+          if (profile?.is_banned) {
+            alert('このアカウントは利用停止（BAN）されています。詳細は運営までお問い合わせください。');
+            logout();
+            setLoading(false);
+            return;
+          }
+          if (profile) {
+            setCurrentUser(profile);
+            const userRole = profile.role || null;
+            setRole(userRole);
+            if (profile.favorite_ids) {
+              setLikes(profile.favorite_ids);
+            }
+            if (userRole) {
+              fetchOffers(session.user.id, userRole);
+              fetchMessages(session.user.id);
+              fetchNotifications(session.user.id);
+
+              // Subscribe to notifications
+              const channel = supabase
+                .channel(`user_notifications_${session.user.id}`)
+                .on(
+                  'postgres_changes',
+                  {
+                    event: '*',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${session.user.id}`
+                  },
+                  (payload) => {
+                    console.log('Notification change received:', payload);
+                    if (payload.eventType === 'INSERT') {
+                      const n = payload.new as any;
+                      const newNotif: Notification = {
+                        id: n.id,
+                        userId: n.user_id,
+                        type: n.type,
+                        title: n.title,
+                        message: n.message,
+                        link: n.link,
+                        timestamp: n.timestamp,
+                        read: n.read
+                      };
+                      setNotifications(prev => [newNotif, ...prev]);
+                    } else if (payload.eventType === 'UPDATE') {
+                      setNotifications(prev => prev.map(n => n.id === payload.new.id ? {
+                        ...n,
+                        read: payload.new.read
+                      } : n));
+                    } else if (payload.eventType === 'DELETE') {
+                      setNotifications(prev => prev.filter(n => n.id !== payload.old.id));
+                    }
+                  }
+                )
+                .subscribe();
+
+              return () => {
+                supabase.removeChannel(channel);
+              };
+            }
+          } else {
+            console.warn('Could not load user profile on auth state change (possibly due to database wakeup sleep). Retaining session without profile details.');
           }
         }
-      } else {
+      } else if (event === 'SIGNED_OUT' || !session) {
         if (mounted) {
           setUser(null);
           setCurrentUser(null);
           setRole(null);
+          setLikes([]);
         }
       }
       if (mounted) setLoading(false);
@@ -210,47 +275,104 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     console.log('Updating profile for:', user.id, updates);
     
     // Ensure we don't accidentally overwrite the role with something null/undefined
-    // unless it's explicitly provided in updates (which it shouldn't be for regular profile edits)
     const finalUpdates = { ...updates };
     if (currentUser?.role && !finalUpdates.role) {
       finalUpdates.role = currentUser.role;
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert({ id: user.id, ...finalUpdates })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Update profile error details:', JSON.stringify(error));
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({ id: user.id, ...finalUpdates })
+        .select()
+        .single();
+      
+      if (error) {
+        // Handle missing column errors (like 'gender' if it hasn't been added to DB yet)
+        if (error.message?.includes('column') && error.message?.includes('not found')) {
+          console.warn('Retrying update without potentially missing columns...');
+          const { gender, favorite_ids, ...safeUpdates } = finalUpdates as any;
+          const { data: retryData, error: retryError } = await supabase
+            .from('profiles')
+            .upsert({ id: user.id, ...safeUpdates })
+            .select()
+            .single();
+          
+          if (retryError) throw retryError;
+          if (retryData) {
+            setCurrentUser(retryData);
+            if (retryData.role) setRole(retryData.role);
+          }
+          return;
+        }
+        throw error;
+      }
+      
+      if (data) {
+        console.log('Profile updated successfully:', data);
+        setCurrentUser(data);
+        if (data.role) setRole(data.role); // Sync state role with DB role
+      }
+    } catch (error) {
+      console.error('Update profile error:', error);
       throw error;
     }
+  };
+
+  const robustInsertOffer = async (offerData: any) => {
+    const { data, error } = await supabase.from('offers').insert(offerData).select().single();
     
-    if (data) {
-      console.log('Profile updated successfully:', data);
-      setCurrentUser(data);
-      if (data.role) setRole(data.role); // Sync state role with DB role
-    } else {
-      console.warn('Profile update returned no data');
+    if (error && error.message?.includes('column') && error.message?.includes('not found')) {
+      console.warn('Offer insert failed due to missing column, retrying with minimal fields...');
+      // Strip potentially problematic columns
+      const { sender_role, timestamp, last_message, message, ...minimalOffer } = offerData;
+      const { data: retryData, error: retryError } = await supabase.from('offers').insert(minimalOffer).select().single();
+      if (retryError) throw retryError;
+      return retryData;
     }
+    
+    if (error) throw error;
+    return data;
   };
 
   const sendOffer = async (receiverId: string) => {
     if (!user) return;
-    const { error } = await supabase.from('offers').insert({
+    const newOffer: any = {
       sender_id: user.id,
       receiver_id: receiverId,
-      status: 'pending'
-    });
-    if (!error) {
-      logAction(user.id, 'scout_sent', receiverId);
+      status: 'pending' as const,
+      sender_role: role || 'casting',
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      const data = await robustInsertOffer(newOffer);
+      if (data) {
+        setOffers(prev => [mapOffer(data), ...prev]);
+        logAction(user.id, 'scout_sent', receiverId);
+      }
+    } catch (error) {
+      console.error('Error sending offer:', error);
+      throw error;
     }
   };
+
+  // Helper to map DB offer to UI offer
+  const mapOffer = (o: any): Offer => ({
+    id: o.id,
+    senderId: o.sender_id,
+    receiverId: o.receiver_id,
+    senderRole: o.sender_role || 'casting',
+    status: o.status,
+    timestamp: o.timestamp,
+    lastMessage: o.last_message,
+    mediatorId: o.mediator_id
+  });
 
   const updateOfferStatus = async (offerId: string, status: 'approved' | 'declined') => {
     const { error } = await supabase.from('offers').update({ status }).eq('id', offerId);
     if (!error) {
+      setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status } : o));
       logAction(user?.id, `offer_${status}`, offerId);
     }
   };
@@ -262,16 +384,56 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const login = (selectedRole: UserRole) => setRole(selectedRole);
   const logout = async () => { await supabase.auth.signOut(); };
-  const toggleLike = (id: string) => {
+  
+  const toggleLike = async (id: string) => {
+    if (!user) return;
+    
     const isLiked = likes.includes(id);
-    setLikes(prev => isLiked ? prev.filter(i => i !== id) : [...prev, id]);
+    const newLikes = isLiked ? likes.filter(i => i !== id) : [...likes, id];
+    
+    setLikes(newLikes);
     logAction(user?.id, isLiked ? 'like_removed' : 'like_added', id);
+    
+    // Persist to DB
+    try {
+      await updateProfile({ favorite_ids: newLikes });
+    } catch (err) {
+      console.error('Failed to persist likes:', err);
+      // Fallback: stay in local state
+    }
   };
-  const markNotificationAsRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  const clearNotifications = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markNotificationAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', id);
+      
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+    }
+  };
+
+  const clearNotifications = async () => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+      
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Error clearing notifications:', err);
+    }
+  };
 
   const checkOfferLimit = async () => {
-    if (!user || role !== 'agency' || currentUser?.plan !== 'free') return false;
+    if (!user || (role !== 'agency' && role !== 'casting') || currentUser?.plan !== 'free') return false;
 
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
@@ -281,7 +443,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
       .from('offers')
       .select('*', { count: 'exact', head: true })
       .eq('sender_id', user.id)
-      .gte('created_at', startOfMonth.toISOString());
+      .gte('timestamp', startOfMonth.toISOString());
 
     if (error) {
       console.error('Error checking offer limit:', error);
@@ -313,7 +475,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
       currentUser, role, user, loading, login, logout, updateProfile,
       likes, toggleLike, offers, sendOffer, updateOfferStatus,
       messages, sendMessage, notifications, markNotificationAsRead, clearNotifications,
-      checkOfferLimit, markMessagesAsRead
+      checkOfferLimit, markMessagesAsRead, robustInsertOffer
     }}>
       {children}
     </UserContext.Provider>

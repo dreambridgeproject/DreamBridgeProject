@@ -70,7 +70,7 @@ const QuickAccessPopup: React.FC = () => {
             </Link>
 
             {/* Verification Info */}
-            <Link to={verificationStatus === 'none' ? "/verification" : "/mypage"} onClick={() => setIsOpen(false)} style={menuItemStyle}>
+            <Link to="/verification" onClick={() => setIsOpen(false)} style={menuItemStyle}>
               <div style={iconBoxStyle}>
                 {verificationStatus === 'verified' ? <ShieldCheck size={18} color="#10b981" /> : <ShieldAlert size={18} color="#f59e0b" />}
               </div>

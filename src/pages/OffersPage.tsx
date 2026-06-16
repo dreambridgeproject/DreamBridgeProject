@@ -2,13 +2,30 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
-import { mockTalents, mockAgencies } from '../data/mock';
 import { CheckCircle2, XCircle, Clock, MessageCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import type { Profile } from '../types';
 
 const OffersPage: React.FC = () => {
   const { currentUser, offers, updateOfferStatus, role } = useUser();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
+  const [partnerProfiles, setPartnerProfiles] = useState<Record<string, Profile>>({});
+
+  React.useEffect(() => {
+    const fetchPartnerProfiles = async () => {
+      if (!currentUser) return;
+      const partnerIds = [...new Set(offers.map(o => o.senderId === currentUser.id ? o.receiverId : o.senderId))];
+      if (partnerIds.length === 0) return;
+
+      const { data } = await supabase.from('profiles').select('*').in('id', partnerIds);
+      if (data) {
+        const profileMap = data.reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
+        setPartnerProfiles(profileMap);
+      }
+    };
+    fetchPartnerProfiles();
+  }, [offers, currentUser?.id]);
 
   if (!currentUser) return null;
 
@@ -17,11 +34,14 @@ const OffersPage: React.FC = () => {
 
   const getPartnerInfo = (offer: any) => {
     const partnerId = offer.senderId === currentUser.id ? offer.receiverId : offer.senderId;
-    const isPartnerTalent = offer.senderId === currentUser.id ? (role === 'agency') : (offer.senderRole === 'talent');
-    
-    const partner = isPartnerTalent 
-      ? mockTalents.find(t => t.id === partnerId) 
-      : mockAgencies.find(a => a.id === partnerId);
+    const partner = partnerProfiles[partnerId] || {
+      id: partnerId,
+      full_name: '名前未設定のユーザー',
+      name: '名前未設定のユーザー',
+      avatar_url: '',
+      role: offer.senderRole || 'casting'
+    };
+    const isPartnerTalent = partner?.role === 'talent';
     
     return { partner, isPartnerTalent };
   };
@@ -54,12 +74,12 @@ const OffersPage: React.FC = () => {
         border: '1px solid var(--border)'
       }}>
         <img 
-          src={isPartnerTalent ? (partner as any).icon : (partner as any).logo} 
-          alt={partner.name} 
+          src={partner.avatar_url || 'https://via.placeholder.com/60'} 
+          alt={partner.full_name || partner.name} 
           style={{ width: '60px', height: '60px', borderRadius: isPartnerTalent ? '50%' : 'var(--radius-sm)', objectFit: 'cover' }}
         />
         <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>{partner.name}</h3>
+          <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>{partner.full_name || partner.name}</h3>
           <StatusBadge status={offer.status} />
         </div>
         

@@ -24,15 +24,28 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
     maxAge: '',
     minHeight: '',
     maxHeight: '',
+    minWeight: '',
+    maxWeight: '',
     location: '',
     gender: '',
-    affiliation: ''
+    affiliation: '',
+    skill: ''
   });
+  
+  const [sortBy, setSortBy] = useState<'newest' | 'updated' | 'verified'>('newest');
   
   const initialGenre = 'すべて';
   const [selectedGenre, setSelectedGenre] = useState(initialGenre);
 
-  const locations = ['東京都', '神奈川県', '大阪府', '愛知県', '福岡県', '北海道', '千葉県', '埼玉県', '兵庫県', '京都府'];
+  const locations = [
+    '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+    '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+    '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
+    '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
+    '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+    '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
+    '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
+  ];
 
   const talentGenres = [
     { key: 'すべて', label: t('genre.all') },
@@ -100,11 +113,26 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
       if (filters.maxAge) q = q.lte('age', parseInt(filters.maxAge));
       if (filters.minHeight) q = q.gte('height', parseInt(filters.minHeight));
       if (filters.maxHeight) q = q.lte('height', parseInt(filters.maxHeight));
+      if (filters.minWeight) q = q.gte('weight', parseInt(filters.minWeight));
+      if (filters.maxWeight) q = q.lte('weight', parseInt(filters.maxWeight));
       if (filters.location) q = q.eq('location', filters.location);
       if (filters.gender) q = q.eq('gender', filters.gender);
       if (filters.affiliation) q = q.eq('affiliation_status', filters.affiliation);
+      if (filters.skill) q = q.contains('skill_tags', [filters.skill]);
 
-      const { data, error } = await q.order('id', { ascending: false });
+      // Sorting
+      if (sortBy === 'newest') {
+        q = q.order('created_at', { ascending: false });
+      } else if (sortBy === 'updated') {
+        q = q.order('updated_at', { ascending: false });
+      } else if (sortBy === 'verified') {
+        q = q.order('verification_status', { ascending: false }) // 'verified' comes before 'reviewing' or 'none'
+             .order('created_at', { ascending: false });
+      } else {
+        q = q.order('id', { ascending: false });
+      }
+
+      const { data, error } = await q;
 
       if (error) {
         console.error('Supabase Search Error:', error);
@@ -121,12 +149,23 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
 
   useEffect(() => {
     fetchUsers();
-  }, [type, selectedGenre, filters.location]);
+  }, [type, selectedGenre, filters.location, sortBy]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     fetchUsers();
   };
+
+  const skillOptions = [
+    { key: '俳優', label: t('skill.actor') },
+    { key: '声優', label: t('skill.voice') },
+    { key: '歌手', label: t('skill.singer') },
+    { key: 'アイドル', label: t('skill.idol') },
+    { key: 'ダンサー', label: t('skill.dancer') },
+    { key: 'モデル', label: t('skill.fashion') },
+    { key: 'ライバー', label: t('skill.liver') },
+    { key: 'YouTuber', label: t('skill.youtuber') }
+  ];
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
@@ -151,13 +190,28 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
             <button type="submit" className="btn btn-primary" style={{ padding: '0 2rem' }}>{t('search.search_btn')}</button>
           </div>
 
-          <button 
-            type="button" 
-            onClick={() => setShowFilters(!showFilters)}
-            style={{ alignSelf: 'flex-start', background: 'none', color: 'var(--accent)', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-          >
-            {showFilters ? t('search.filter_close') : t('search.filter_open')}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <button 
+              type="button" 
+              onClick={() => setShowFilters(!showFilters)}
+              style={{ background: 'none', color: 'var(--accent)', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', border: 'none' }}
+            >
+              {showFilters ? t('search.filter_close') : t('search.filter_open')}
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('search.sort_by')}</span>
+              <select 
+                value={sortBy} 
+                onChange={e => setSortBy(e.target.value as any)}
+                style={{ ...filterInputStyle, width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.8125rem' }}
+              >
+                <option value="newest">{t('search.sort_newest')}</option>
+                <option value="updated">{t('search.sort_updated')}</option>
+                <option value="verified">{t('search.sort_verified')}</option>
+              </select>
+            </div>
+          </div>
 
           {showFilters && (
             <div style={{ 
@@ -203,6 +257,20 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
 
               {type === 'talent' && (
                 <div style={filterGroupStyle}>
+                  <label style={filterLabelStyle}>{t('search.skill_tag')}</label>
+                  <select 
+                    value={filters.skill} 
+                    onChange={e => setFilters({...filters, skill: e.target.value})}
+                    style={filterInputStyle}
+                  >
+                    <option value="">{t('genre.all')}</option>
+                    {skillOptions.map(opt => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {type === 'talent' && (
+                <div style={filterGroupStyle}>
                   <label style={filterLabelStyle}>{t('search.age_range')}</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <input type="number" placeholder={t('search.min')} value={filters.minAge} onChange={e => setFilters({...filters, minAge: e.target.value})} style={filterInputStyle} />
@@ -223,6 +291,17 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
                 </div>
               )}
 
+              {type === 'talent' && (
+                <div style={filterGroupStyle}>
+                  <label style={filterLabelStyle}>{t('search.weight_range')}</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input type="number" placeholder={t('search.min')} value={filters.minWeight} onChange={e => setFilters({...filters, minWeight: e.target.value})} style={filterInputStyle} />
+                    <span>〜</span>
+                    <input type="number" placeholder={t('search.max')} value={filters.maxWeight} onChange={e => setFilters({...filters, maxWeight: e.target.value})} style={filterInputStyle} />
+                  </div>
+                </div>
+              )}
+
               <div style={filterGroupStyle}>
                 <label style={filterLabelStyle}>{t('job.location_label')}</label>
                 <select 
@@ -239,8 +318,9 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
                 <button 
                   type="button" 
                   onClick={() => {
-                    setFilters({ minAge: '', maxAge: '', minHeight: '', maxHeight: '', location: '', gender: '', affiliation: '' });
+                    setFilters({ minAge: '', maxAge: '', minHeight: '', maxHeight: '', minWeight: '', maxWeight: '', location: '', gender: '', affiliation: '', skill: '' });
                     setSelectedGenre('すべて');
+                    setSortBy('newest');
                   }}
                   className="btn btn-outline" 
                   style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', width: '100%' }}

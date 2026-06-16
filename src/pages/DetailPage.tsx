@@ -12,7 +12,7 @@ import {
 
 const DetailPage: React.FC = () => {
   const { id } = useParams<{ type: 'talent' | 'agency' | 'casting'; id: string }>();
-  const { currentUser, role, likes, toggleLike, sendOffer, offers, checkOfferLimit } = useUser();
+  const { currentUser, role, likes, toggleLike, sendOffer, offers, checkOfferLimit, robustInsertOffer } = useUser();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
@@ -34,7 +34,7 @@ const DetailPage: React.FC = () => {
       setIsLimitReached(reached);
     };
     if (role === 'agency' || role === 'casting') checkLimit();
-  }, [role, checkOfferLimit]);
+  }, [role, checkOfferLimit, offers.length]); // Re-check when offers change
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -80,8 +80,8 @@ const DetailPage: React.FC = () => {
   const isAffiliated = !!(isTalentDetail && profile.affiliation_status === 'affiliated' && profile.agency_id);
   const isCastingDetail = profile.role === 'casting';
   
-  // Restricted offer for free agencies
-  const canSendOffer = role === 'talent' || (role === 'agency' && (currentUser as any)?.plan !== 'free') || role === 'casting';
+  // Restricted offer check - allow all roles during beta (limit handled by isLimitReached)
+  const canSendOffer = !!role;
   const isOfferBlockedByAgency = isAffiliated && profile.accept_external_offers === false;
 
   const handleOffer = async () => {
@@ -98,22 +98,32 @@ const DetailPage: React.FC = () => {
 
     if (isAffiliated) {
       // Mediated offer
-      const { error } = await supabase.from('offers').insert({
+      const newMediatedOffer: any = {
         sender_id: currentUser.id,
         receiver_id: profile.id,
+        sender_role: role || 'casting',
         mediator_id: profile.agency_id,
-        status: 'pending'
-      });
-      if (error) {
-        alert(t('job.apply_fail') + ': ' + error.message);
-      } else {
-        alert(t('detail.offer_mediated_sent'));
-        setIsLimitReached(true);
+        status: 'pending',
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        await (robustInsertOffer as any)(newMediatedOffer);
+        alert(t('offer.send_success'));
+        const reached = await checkOfferLimit();
+        setIsLimitReached(reached);
+      } catch (err: any) {
+        alert(t('offer.send_fail') + (err.message ? ': ' + err.message : ''));
       }
     } else {
-      sendOffer(profile.id);
-      alert(t('detail.offer_sent'));
-      setIsLimitReached(true);
+      try {
+        await sendOffer(profile.id);
+        alert(t('offer.send_success'));
+        const reached = await checkOfferLimit();
+        setIsLimitReached(reached);
+      } catch (err: any) {
+        alert(t('offer.send_fail'));
+      }
     }
   };
 

@@ -127,22 +127,17 @@ const MyPage: React.FC = () => {
     console.log(`Uploading to ${bucket}, updating field ${field}...`);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`; // Folder structure for RLS
 
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from(bucket)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
         });
 
-      if (uploadError) {
-        console.error('Upload error details:', JSON.stringify(uploadError));
-        throw uploadError;
-      }
-
-      console.log('Upload successful:', uploadData);
+      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from(bucket)
@@ -633,7 +628,7 @@ const MyPage: React.FC = () => {
             <h3 style={{ fontSize: '0.9375rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
               <span>{t('mypage.photos')}</span>
               <button onClick={() => photoInputRef.current?.click()} style={addMediaBtnStyle}><Plus size={14} /> {t('mypage.add')}</button>
-              <input type="file" ref={photoInputRef} onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'avatars', 'photos')} accept="image/*" style={{ display: 'none' }} />
+              <input type="file" ref={photoInputRef} onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'photos', 'photos')} accept="image/*" style={{ display: 'none' }} />
             </h3>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               {currentUser?.photos?.map((url, i) => (

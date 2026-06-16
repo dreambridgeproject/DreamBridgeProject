@@ -1,7 +1,7 @@
 import React from 'react';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Check, Zap, Award, Building2, CreditCard } from 'lucide-react';
+import { Check, Zap, Building2, CreditCard } from 'lucide-react';
 
 const SubscriptionPage: React.FC = () => {
   const { role } = useUser();
@@ -90,7 +90,6 @@ const SubscriptionPage: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '2rem', marginBottom: '2rem', color: 'var(--text-main)', opacity: 0.6 }}>
           <div style={paymentIconStyle}><CreditCard size={24} /><span style={{ fontSize: '0.75rem' }}>Card</span></div>
           <div style={paymentIconStyle}><Zap size={24} /><span style={{ fontSize: '0.75rem' }}>PayPay</span></div>
-          <div style={paymentIconStyle}><Award size={24} /><span style={{ fontSize: '0.75rem' }}>Carrier</span></div>
           <div style={paymentIconStyle}><div style={{ fontWeight: 800 }}>Pay</div><span style={{ fontSize: '0.75rem' }}>Apple/Google</span></div>
           <div style={paymentIconStyle}><Building2 size={24} /><span style={{ fontSize: '0.75rem' }}>Bank</span></div>
         </div>

@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { 
   CreditCard, Building2, Store, 
   Plus, ChevronRight, AlertCircle,
-  SmartphoneNfc, Zap
+  Zap
 } from 'lucide-react';
 
 const PaymentSettingsPage: React.FC = () => {
@@ -13,12 +13,11 @@ const PaymentSettingsPage: React.FC = () => {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   const paymentMethods = [
-    { id: 'card', name: 'Credit Card', icon: <CreditCard size={24} />, desc: 'Visa, Mastercard, JCB, AMEX', status: 'Registered' },
-    { id: 'bank', name: 'Bank Transfer', icon: <Building2 size={24} />, desc: 'Enterprise plan only', status: 'Unavailable' },
-    { id: 'paypay', name: 'PayPay', icon: <Zap size={24} />, desc: 'Currently in preparation', status: 'Coming Soon' },
-    { id: 'carrier', name: 'Carrier Billing', icon: <SmartphoneNfc size={24} />, desc: 'Docomo, au, SoftBank', status: 'Not set' },
-    { id: 'apple_google', name: 'Apple / Google Pay', icon: <div style={{ fontWeight: 800 }}>Pay</div>, desc: 'Device biometrics', status: 'Available' },
-    { id: 'conveni', name: 'Convenience Store', icon: <Store size={24} />, desc: '7-Eleven, FamilyMart, Lawson', status: 'Pay-as-you-go' },
+    { id: 'card', name: 'クレジットカード', icon: <CreditCard size={24} />, desc: 'Visa, Mastercard, JCB, AMEX', status: '未設定' },
+    { id: 'bank', name: '銀行振込', icon: <Building2 size={24} />, desc: 'エンタープライズプラン専用', status: '利用不可' },
+    { id: 'paypay', name: 'PayPay', icon: <Zap size={24} />, desc: '現在準備中', status: '近日対応' },
+    { id: 'apple_google', name: 'Apple / Google Pay', icon: <div style={{ fontWeight: 800 }}>Pay</div>, desc: 'デバイスの生体認証', status: '利用可能' },
+    { id: 'conveni', name: 'コンビニ決済', icon: <Store size={24} />, desc: 'セブンイレブン、ファミリーマート、ローソン等', status: '都度払い' },
   ];
 
   return (
@@ -28,7 +27,7 @@ const PaymentSettingsPage: React.FC = () => {
           <ChevronRight size={18} style={{ transform: 'rotate(180deg)' }} /> {t('detail.back')}
         </button>
         <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{t('pay.title')}</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Manage your payment methods for plan purchases and renewals.</p>
+        <p style={{ color: 'var(--text-muted)' }}>プランのご契約や更新に利用するお支払い方法を管理します。</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -57,11 +56,11 @@ const PaymentSettingsPage: React.FC = () => {
               <span style={{ 
                 fontSize: '0.75rem', 
                 fontWeight: 600,
-                color: method.status === 'Registered' ? '#10b981' : 'var(--text-muted)'
+                color: method.status === '登録済み' ? '#10b981' : 'var(--text-muted)'
               }}>
                 {method.status}
               </span>
-              {method.status === 'Not set' || method.status === 'Unavailable' ? (
+              {method.status === '未設定' || method.status === '利用不可' ? (
                 <div style={{ color: 'var(--accent)', marginTop: '0.25rem' }}><Plus size={18} /></div>
               ) : (
                 <div style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}><ChevronRight size={18} /></div>
@@ -74,8 +73,8 @@ const PaymentSettingsPage: React.FC = () => {
       <div style={{ marginTop: '2.5rem', padding: '1.5rem', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 'var(--radius-md)', border: '1px solid #3b82f6', display: 'flex', gap: '1rem' }}>
         <AlertCircle size={24} color="#3b82f6" style={{ flexShrink: 0 }} />
         <div style={{ fontSize: '0.875rem', color: '#1d4ed8', lineHeight: 1.5 }}>
-          <strong>Security:</strong><br />
-          Sensitive information such as card numbers is encrypted and managed in a secure ISO 27001 certified environment. DreamBridge does not store your card details directly.
+          <strong>セキュリティ:</strong><br />
+          カード番号などの個人情報は暗号化され、ISO 27001認証を取得した安全な環境で管理されます。DreamBridgeがお客様のカード情報を直接保存することはありません。
         </div>
       </div>
 
