@@ -12,6 +12,26 @@ jobs:
     steps:
       - name: Ping Supabase API
         run: |
-          curl -i -X GET \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+          API_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          if [ -z "$API_KEY" ]; then
+            API_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}"
+          fi
+
+          if [ -z "$API_KEY" ]; then
+            echo "=========================================================================="
+            echo "Error: Neither SUPABASE_ANON_KEY nor VITE_SUPABASE_ANON_KEY secret is set."
+            echo "To fix this daily run failure:"
+            echo "1. Go to your GitHub repository on github.com"
+            echo "2. Navigate to: Settings -> Secrets and variables -> Actions"
+            echo "3. Click 'New repository secret'"
+            echo "4. Name: SUPABASE_ANON_KEY"
+            echo "5. Value: (Copy the VITE_SUPABASE_ANON_KEY value from your .env file)"
+            echo "=========================================================================="
+            exit 1
+          fi
+
+          # Use -f to ensure curl fails if Supabase returns an error status (like 500/503/401)
+          curl -f -i -X GET \
+            -H "apikey: $API_KEY" \
             "https://htwbqbivryazrebjjish.supabase.co/rest/v1/profiles?limit=1"
+
