@@ -92,7 +92,10 @@ const MyPage: React.FC = () => {
         full_name: editData.full_name,
         bio: editData.bio,
         location: editData.location,
-        genres: editData.genres
+        genres: editData.genres,
+        instagram_url: editData.instagram_url,
+        x_url: editData.x_url,
+        website_url: editData.website_url
       };
 
       if (isTalent) {

@@ -281,22 +281,28 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
 
     try {
-      const { data, error } = await supabase
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 15000));
+      const upsertPromise = supabase
         .from('profiles')
         .upsert({ id: user.id, ...finalUpdates })
         .select()
         .single();
+      
+      const { data, error } = await Promise.race([upsertPromise, timeoutPromise]) as any;
       
       if (error) {
         // Handle missing column errors (like 'gender' if it hasn't been added to DB yet)
         if (error.message?.includes('column') && error.message?.includes('not found')) {
           console.warn('Retrying update without potentially missing columns...');
           const { gender, favorite_ids, ...safeUpdates } = finalUpdates as any;
-          const { data: retryData, error: retryError } = await supabase
+          
+          const retryPromise = supabase
             .from('profiles')
             .upsert({ id: user.id, ...safeUpdates })
             .select()
             .single();
+            
+          const { data: retryData, error: retryError } = await Promise.race([retryPromise, timeoutPromise]) as any;
           
           if (retryError) throw retryError;
           if (retryData) {
