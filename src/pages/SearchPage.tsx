@@ -95,11 +95,14 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
       logSearch(currentUser?.id, { selectedGenre, ...filters, query });
     }
 
-    try {
+    // Base query without ordering, rebuilt on each attempt since a
+    // Postgrest query builder can only be awaited (consumed) once.
+    const buildBaseQuery = () => {
       let q = supabase
         .from('profiles')
         .select('*')
-        .eq('role', type);
+        .eq('role', type)
+        .eq('is_banned', false);
 
       if (selectedGenre !== 'すべて') {
         q = q.contains('genres', [selectedGenre]);
@@ -120,6 +123,12 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
       if (filters.affiliation) q = q.eq('affiliation_status', filters.affiliation);
       if (filters.skill) q = q.contains('skill_tags', [filters.skill]);
 
+      return q;
+    };
+
+    try {
+      let q = buildBaseQuery();
+
       // Sorting
       if (sortBy === 'newest') {
         q = q.order('created_at', { ascending: false });
@@ -132,7 +141,17 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
         q = q.order('id', { ascending: false });
       }
 
-      const { data, error } = await q;
+      let { data, error } = await q;
+
+      // Some environments may be missing the `created_at` column - rather
+      // than showing an empty result set, fall back to sorting by
+      // `updated_at`, which always exists.
+      if (error?.code === '42703') {
+        console.warn('Sort column unavailable, retrying with updated_at:', error.message);
+        const retry = await buildBaseQuery().order('updated_at', { ascending: false });
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) {
         console.error('Supabase Search Error:', error);

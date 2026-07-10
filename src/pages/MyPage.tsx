@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 const MyPage: React.FC = () => {
-  const { currentUser, role, user, loading: userLoading, logout, updateProfile } = useUser();
+  const { currentUser, role, user, loading: userLoading, profileLoading, logout, updateProfile } = useUser();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +45,7 @@ const MyPage: React.FC = () => {
     }
   }, [user, userLoading, navigate]);
 
-  // Wait for loading to finish before checking user
+  // Wait for auth (fast) to finish before checking user
   if (userLoading) {
     return <div style={{ padding: '5rem', textAlign: 'center' }}>{t('mypage.loading')}</div>;
   }
@@ -54,11 +54,70 @@ const MyPage: React.FC = () => {
     return null; // Return null instead of navigating during render
   }
 
+  // Auth is resolved but the profile row is still being fetched/created
+  // (can take a few seconds on a cold-started database) - don't block forever.
+  if (profileLoading && !currentUser) {
+    return <div style={{ padding: '5rem', textAlign: 'center' }}>{t('mypage.loading')}</div>;
+  }
+
+  // Profile fetch ultimately failed (e.g. timed out) - let the user retry
+  // instead of silently rendering a page with no data.
+  if (!profileLoading && !currentUser) {
+    return (
+      <div style={{ padding: '5rem 1rem', textAlign: 'center' }}>
+        <p style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>{t('mypage.profile_load_error')}</p>
+        <button onClick={() => window.location.reload()} className="btn btn-primary" style={{ padding: '0.5rem 1.5rem' }}>
+          {t('mypage.retry')}
+        </button>
+      </div>
+    );
+  }
+
   const isAdmin = user?.email === 'admin@dreambridge.jp' || user?.email?.includes('admin@');
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm(t('mypage.delete_account_confirm'))) return;
+    setLoading(true);
+    try {
+      // Full account deletion (auth.users) requires server-side admin
+      // privileges we don't have from the client - so this "soft deletes"
+      // by wiping personal data and marking the account inactive.
+      await updateProfile({
+        full_name: t('mypage.deleted_user_name'),
+        bio: '',
+        avatar_url: null,
+        photos: [],
+        videos: [],
+        audios: [],
+        location: null,
+        age: null,
+        height: null,
+        weight: null,
+        hobbies: '',
+        skills: '',
+        website_url: null,
+        instagram_url: null,
+        x_url: null,
+        genres: [],
+        skill_tags: [],
+        company_description: '',
+        contact_info: '',
+        representative_name: '',
+        gender: 'none',
+        is_banned: true
+      } as any);
+      await logout();
+      navigate('/');
+    } catch (error: any) {
+      alert(t('mypage.save_error') + '\n' + (error.message || ''));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startEditing = () => {
@@ -88,14 +147,54 @@ const MyPage: React.FC = () => {
     setLoading(true);
     console.log('Attempting to save profile...', editData);
     try {
+      const normalizeSocialId = (raw: string) => {
+        const s = (raw || '').trim();
+        if (!s) return '';
+
+        // Instagram: https://instagram.com/{id}, @id, id
+        if (/^https?:\/\/(www\.)?instagram\.com\//i.test(s)) {
+          return s.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').split(/[/?#]/)[0].replace(/^@/, '').trim();
+        }
+        return s.replace(/^@/, '').replace(/\s/g, '');
+      };
+
+      const normalizeXId = (raw: string) => {
+        const s = (raw || '').trim();
+        if (!s) return '';
+
+        // X/Twitter: https://twitter.com/{id}, https://x.com/{id}, @id, id
+        if (/^https?:\/\/(www\.)?(twitter\.com|x\.com)\//i.test(s)) {
+          return s.replace(/^https?:\/\/(www\.)?(twitter\.com|x\.com)\//i, '').split(/[/?#]/)[0].replace(/^@/, '').trim();
+        }
+        return s.replace(/^@/, '').replace(/\s/g, '');
+      };
+
+      // Accepts input with or without a scheme (e.g. "example.com" or
+      // "https://example.com") and always saves a valid absolute URL,
+      // instead of letting an unparsable value block the whole save.
+      const normalizeWebsiteUrl = (raw: string) => {
+        const s = (raw || '').trim();
+        if (!s) return null;
+        const withScheme = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+        try {
+          return new URL(withScheme).toString();
+        } catch {
+          return null;
+        }
+      };
+
+      const instagramId = normalizeSocialId(editData.instagram_url);
+      const xId = normalizeXId(editData.x_url);
+
       const updates: any = {
         full_name: editData.full_name,
         bio: editData.bio,
         location: editData.location,
         genres: editData.genres,
-        instagram_url: editData.instagram_url,
-        x_url: editData.x_url,
-        website_url: editData.website_url
+        // DBはIDを想定（表示は `instagram.com/${id}` / `twitter.com/${id}` 前提）
+        instagram_url: instagramId || null,
+        x_url: xId || null,
+        website_url: normalizeWebsiteUrl(editData.website_url)
       };
 
       if (isTalent) {
@@ -474,7 +573,7 @@ const MyPage: React.FC = () => {
                         <input type="text" placeholder={t('detail.skills')} value={editData.skills} onChange={e => setEditData({...editData, skills: e.target.value})} style={inputStyle} />
                       </div>
                     ) : (
-                      <input type="url" placeholder={t('mypage.website_url')} value={(editData as any).website_url || ''} onChange={e => setEditData({...editData, website_url: e.target.value} as any)} style={inputStyle} />
+                      <input type="text" placeholder={t('mypage.website_url')} value={(editData as any).website_url || ''} onChange={e => setEditData({...editData, website_url: e.target.value} as any)} style={inputStyle} />
                     )}
                     <textarea placeholder={isTalent ? t('mypage.bio_placeholder_talent') : t('mypage.bio_placeholder_agency')} value={editData.bio} onChange={e => setEditData({...editData, bio: e.target.value})} style={{ ...inputStyle, minHeight: '120px' }} />
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -658,8 +757,14 @@ const MyPage: React.FC = () => {
       )}
 
       {/* Footer (Simplified) */}
-      <div style={{ textAlign: 'center', marginTop: '4rem', opacity: 0.6 }}>
-        <p style={{ fontSize: '0.75rem' }}>© 2026 DreamBridge</p>
+      <div style={{ textAlign: 'center', marginTop: '4rem' }}>
+        <button
+          onClick={handleDeleteAccount}
+          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', textDecoration: 'underline', cursor: 'pointer', marginBottom: '1rem' }}
+        >
+          {t('mypage.delete_account')}
+        </button>
+        <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>© 2026 DreamBridge</p>
       </div>
     </div>
   );

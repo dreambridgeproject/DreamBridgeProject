@@ -4,7 +4,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import LandingPage from './pages/LandingPage';
-import { LoginPage, SignupPage } from './pages/AuthPages';
+import { LoginPage, SignupPage, ResetPasswordPage } from './pages/AuthPages';
 import MyPage from './pages/MyPage';
 import JobsPage from './pages/JobsPage';
 import JobManagementPage from './pages/JobManagementPage';
@@ -50,6 +50,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/signup/:type" element={<SignupPage />} />
                 <Route path="/mypage" element={<MyPage />} />
                 <Route path="/jobs" element={<JobsPage />} />

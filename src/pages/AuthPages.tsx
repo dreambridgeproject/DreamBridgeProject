@@ -11,6 +11,29 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError(null);
+
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    setResetLoading(false);
+    if (resetErr) {
+      setResetError(resetErr.message);
+    } else {
+      setResetSent(true);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -64,15 +87,50 @@ export const LoginPage: React.FC = () => {
             style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }} 
             required 
           />
-          <button 
-            className="btn btn-primary" 
-            type="submit" 
+          <button
+            className="btn btn-primary"
+            type="submit"
             disabled={loading}
             style={{ width: '100%', marginTop: '0.5rem' }}
           >
             {loading ? t('auth.logging_in') : t('auth.login_btn')}
           </button>
         </form>
+
+        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => { setShowForgotPassword(!showForgotPassword); setResetSent(false); setResetError(null); }}
+            style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer' }}
+          >
+            {t('auth.forgot_password')}
+          </button>
+        </div>
+
+        {showForgotPassword && (
+          <div style={{ marginTop: '1rem', padding: '1rem', borderRadius: 'var(--radius-sm)', backgroundColor: '#f3f3f3' }}>
+            {resetSent ? (
+              <p style={{ fontSize: '0.875rem', color: '#1a1a1a', margin: 0 }}>{t('auth.reset_email_sent')}</p>
+            ) : (
+              <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <p style={{ fontSize: '0.8125rem', color: '#666', margin: 0 }}>{t('auth.reset_password_desc')}</p>
+                {resetError && <div style={{ color: 'red', fontSize: '0.8125rem' }}>{resetError}</div>}
+                <input
+                  type="email"
+                  placeholder={t('auth.email')}
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  style={{ padding: '0.625rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }}
+                  required
+                />
+                <button className="btn btn-outline" type="submit" disabled={resetLoading} style={{ width: '100%' }}>
+                  {resetLoading ? t('auth.sending') : t('auth.reset_password_btn')}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
         <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#666' }}>
           {t('auth.no_account')}<br />
           <Link to="/" style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('auth.from_top')}</Link>
@@ -327,6 +385,83 @@ export const SignupPage: React.FC = () => {
         <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#666' }}>
           <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('auth.login_link')}</Link>
         </div>
+      </div>
+    </div>
+  );
+};
+
+export const ResetPasswordPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (newPassword.length < 6) {
+      setError(t('auth.reset_password_too_short'));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError(t('auth.reset_password_mismatch'));
+      return;
+    }
+
+    setLoading(true);
+    // Supabase establishes a recovery session from the emailed link's URL
+    // fragment automatically (detectSessionInUrl: true), so this just needs
+    // to apply the new password to that session.
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+
+    if (updateError) {
+      setError(updateError.message);
+    } else {
+      setSuccess(true);
+    }
+  };
+
+  return (
+    <div className="container" style={{ padding: '5rem 1rem', maxWidth: '400px' }}>
+      <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: 'var(--shadow)' }}>
+        <h2 style={{ marginBottom: '2rem', textAlign: 'center', color: '#1a1a1a' }}>{t('auth.reset_password_title')}</h2>
+
+        {success ? (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '0.9375rem', color: '#1a1a1a', marginBottom: '1.5rem' }}>{t('auth.reset_password_success')}</p>
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => navigate('/mypage')}>
+              {t('nav.mypage')}
+            </button>
+          </div>
+        ) : (
+          <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleSubmit}>
+            {error && <div style={{ color: 'red', fontSize: '0.875rem' }}>{error}</div>}
+            <input
+              type="password"
+              placeholder={t('auth.new_password')}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }}
+              required
+            />
+            <input
+              type="password"
+              placeholder={t('auth.confirm_new_password')}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', color: '#1a1a1a' }}
+              required
+            />
+            <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', marginTop: '0.5rem' }}>
+              {loading ? t('auth.sending') : t('auth.reset_password_btn')}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

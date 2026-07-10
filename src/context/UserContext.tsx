@@ -9,6 +9,7 @@ interface UserContextType {
   role: UserRole | null;
   user: User | null;
   loading: boolean;
+  profileLoading: boolean;
   login: (role: UserRole) => void;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
@@ -32,6 +33,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
   const [likes, setLikes] = useState<string[]>([]);
@@ -127,7 +129,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     
     try {
       const profilePromise = supabase.from('profiles').select('*').eq('id', userId).single();
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 60000));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 15000));
       
       const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
       
@@ -164,7 +166,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (error) throw error;
       return data;
     } catch (err: any) {
-      if (err.message === 'TIMEOUT' && retryCount < 2) {
+      if (err.message === 'TIMEOUT' && retryCount < 1) {
         console.warn('Profile fetch timed out, retrying...');
         return fetchProfile(userId, metadata, retryCount + 1);
       }
@@ -183,12 +185,16 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
       if (session?.user) {
         setUser(session.user);
+        // Auth itself is resolved now; don't keep the whole app spinning while
+        // the (potentially slow, e.g. DB cold-start) profile fetch runs.
+        setLoading(false);
+        setProfileLoading(true);
         const profile = await fetchProfile(session.user.id, session.user.user_metadata);
+        if (mounted) setProfileLoading(false);
         if (mounted) {
           if (profile?.is_banned) {
-            alert('このアカウントは利用停止（BAN）されています。詳細は運営までお問い合わせください。');
+            alert('このアカウントは現在ご利用いただけません（退会済み、または利用停止中です）。心当たりがない場合は運営までお問い合わせください。');
             logout();
-            setLoading(false);
             return;
           }
           if (profile) {
@@ -255,6 +261,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
           setCurrentUser(null);
           setRole(null);
           setLikes([]);
+          setProfileLoading(false);
         }
       }
       if (mounted) setLoading(false);
@@ -275,54 +282,53 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     console.log('Updating profile for:', user.id, updates);
     
     // Ensure we don't accidentally overwrite the role with something null/undefined
-    const finalUpdates = { ...updates };
+    const finalUpdates: any = { ...updates };
     if (currentUser?.role && !finalUpdates.role) {
       finalUpdates.role = currentUser.role;
     }
+    // No DB trigger keeps this in sync, so stamp it on every edit ourselves -
+    // otherwise "sort by recently updated" never reflects new edits.
+    finalUpdates.updated_at = new Date().toISOString();
 
-    try {
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 15000));
-      const upsertPromise = supabase
-        .from('profiles')
-        .upsert({ id: user.id, ...finalUpdates })
-        .select()
-        .single();
-      
-      const { data, error } = await Promise.race([upsertPromise, timeoutPromise]) as any;
-      
-      if (error) {
-        // Handle missing column errors (like 'gender' if it hasn't been added to DB yet)
-        if (error.message?.includes('column') && error.message?.includes('not found')) {
-          console.warn('Retrying update without potentially missing columns...');
-          const { gender, favorite_ids, ...safeUpdates } = finalUpdates as any;
-          
-          const retryPromise = supabase
-            .from('profiles')
-            .upsert({ id: user.id, ...safeUpdates })
-            .select()
-            .single();
-            
-          const { data: retryData, error: retryError } = await Promise.race([retryPromise, timeoutPromise]) as any;
-          
-          if (retryError) throw retryError;
-          if (retryData) {
-            setCurrentUser(retryData);
-            if (retryData.role) setRole(retryData.role);
+    // The live DB schema can drift from what the app expects (a field used
+    // here but not yet migrated in production, e.g. website_url). Rather than
+    // hard-failing the whole save when Supabase reports an unknown column,
+    // drop just that column and retry so the rest of the edit still persists.
+    let payload: any = { ...finalUpdates };
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 15000));
+        const upsertPromise = supabase
+          .from('profiles')
+          .upsert({ id: user.id, ...payload })
+          .select()
+          .single();
+
+        const { data, error } = await Promise.race([upsertPromise, timeoutPromise]) as any;
+
+        if (error) {
+          const missingColumn = error.message?.match(/Could not find the '([^']+)' column/)?.[1];
+          if (missingColumn && missingColumn in payload) {
+            console.warn(`Column '${missingColumn}' not found on 'profiles' - dropping it and retrying save.`);
+            const { [missingColumn]: _omit, ...rest } = payload;
+            payload = rest;
+            continue;
           }
-          return;
+          throw error;
         }
+
+        if (data) {
+          console.log('Profile updated successfully:', data);
+          setCurrentUser(data);
+          if (data.role) setRole(data.role); // Sync state role with DB role
+        }
+        return;
+      } catch (error) {
+        console.error('Update profile error:', error);
         throw error;
       }
-      
-      if (data) {
-        console.log('Profile updated successfully:', data);
-        setCurrentUser(data);
-        if (data.role) setRole(data.role); // Sync state role with DB role
-      }
-    } catch (error) {
-      console.error('Update profile error:', error);
-      throw error;
     }
+    throw new Error('Failed to update profile after removing unrecognized columns');
   };
 
   const robustInsertOffer = async (offerData: any) => {
@@ -478,7 +484,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   return (
     <UserContext.Provider value={{ 
-      currentUser, role, user, loading, login, logout, updateProfile,
+      currentUser, role, user, loading, profileLoading, login, logout, updateProfile,
       likes, toggleLike, offers, sendOffer, updateOfferStatus,
       messages, sendMessage, notifications, markNotificationAsRead, clearNotifications,
       checkOfferLimit, markMessagesAsRead, robustInsertOffer
