@@ -8,10 +8,7 @@ const Header: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
 
   const unreadNotificationsCount = notifications.filter(n => n.userId === currentUser?.id && !n.read).length;
-  // While auth is still being restored on page load, `currentUser` is
-  // briefly null even for an already-logged-in session - don't flash the
-  // "log in" button during that window, it reads as an unwanted logout.
-  const isLoggedIn = loading ? !!user : !!currentUser;
+  const isLoggedIn = !!user || !!currentUser;
 
   return (
     <header style={{ 
@@ -59,7 +56,12 @@ const Header: React.FC = () => {
           </button>
         </div>
 
-        {isLoggedIn ? (
+        {loading ? (
+          // Auth state for this session isn't known yet (page just loaded) -
+          // render neither button. Showing "log in" here and having it flip
+          // to the menu a moment later reads as an unwanted logout.
+          <div style={{ width: '96px', height: '38px' }} />
+        ) : isLoggedIn ? (
           <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
             {currentUser?.role === 'agency' && (
               <Link to="/agency/talents" style={{ color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: 600, display: window.innerWidth < 768 ? 'none' : 'block' }}>
