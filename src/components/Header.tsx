@@ -4,10 +4,14 @@ import { useLanguage } from '../context/LanguageContext';
 import { User, Bell, Languages } from 'lucide-react';
 
 const Header: React.FC = () => {
-  const { currentUser, notifications } = useUser();
+  const { currentUser, user, loading, notifications } = useUser();
   const { language, setLanguage, t } = useLanguage();
 
   const unreadNotificationsCount = notifications.filter(n => n.userId === currentUser?.id && !n.read).length;
+  // While auth is still being restored on page load, `currentUser` is
+  // briefly null even for an already-logged-in session - don't flash the
+  // "log in" button during that window, it reads as an unwanted logout.
+  const isLoggedIn = loading ? !!user : !!currentUser;
 
   return (
     <header style={{ 
@@ -55,9 +59,9 @@ const Header: React.FC = () => {
           </button>
         </div>
 
-        {currentUser ? (
+        {isLoggedIn ? (
           <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-            {currentUser.role === 'agency' && (
+            {currentUser?.role === 'agency' && (
               <Link to="/agency/talents" style={{ color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: 600, display: window.innerWidth < 768 ? 'none' : 'block' }}>
                 {t('mypage.talent_mgmt')}
               </Link>
