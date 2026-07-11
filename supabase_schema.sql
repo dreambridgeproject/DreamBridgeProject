@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS public.offers (
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_message TEXT,
     mediator_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    job_id UUID REFERENCES public.jobs(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -267,7 +268,10 @@ CREATE POLICY "Users can update own notifications" ON public.notifications FOR U
 
 -- Trigger for new offer
 CREATE OR REPLACE FUNCTION public.handle_new_offer_notification()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     INSERT INTO public.notifications (user_id, type, title, message, link)
     VALUES (
@@ -299,7 +303,10 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_new_offer_notification();
 
 -- Trigger for new job application (notifies the casting company that posted the job)
 CREATE OR REPLACE FUNCTION public.handle_new_application_notification()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
     v_casting_id UUID;
 BEGIN
@@ -326,7 +333,10 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_new_application_notification();
 
 -- Trigger for offer status change
 CREATE OR REPLACE FUNCTION public.handle_offer_status_notification()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     IF OLD.status = 'pending' AND NEW.status = 'approved' THEN
         INSERT INTO public.notifications (user_id, type, title, message, link)
@@ -357,7 +367,10 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_offer_status_notification();
 
 -- Trigger for new message
 CREATE OR REPLACE FUNCTION public.handle_new_message_notification()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
     receiver_id UUID;
 BEGIN

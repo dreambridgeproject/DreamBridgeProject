@@ -59,7 +59,8 @@ const AgencyTalentManagementPage: React.FC = () => {
       .select(`
         *,
         sender:profiles!offers_sender_id_fkey(*),
-        receiver:profiles!offers_receiver_id_fkey(*)
+        receiver:profiles!offers_receiver_id_fkey(*),
+        job:jobs(title)
       `)
       .eq('mediator_id', user.id)
       .eq('status', 'pending');
@@ -240,6 +241,9 @@ const AgencyTalentManagementPage: React.FC = () => {
                     <div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 700, marginBottom: '0.25rem' }}>{t('agency.offer_from_casting')}</div>
                       <h3 style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>{offer.sender.full_name || offer.sender.name}</h3>
+                      {(offer as any).job?.title && (
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 600, marginBottom: '0.5rem' }}>{t('offer.for_job')}: {(offer as any).job.title}</div>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
                         <Clock size={14} /> {new Date(offer.timestamp).toLocaleString()}
                       </div>

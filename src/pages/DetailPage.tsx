@@ -21,6 +21,8 @@ const DetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isLimitReached, setIsLimitReached] = useState(false);
+  const [myJobs, setMyJobs] = useState<{ id: string; title: string }[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<string>('');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -35,6 +37,19 @@ const DetailPage: React.FC = () => {
     };
     if (role === 'agency' || role === 'casting') checkLimit();
   }, [role, checkOfferLimit, offers.length]); // Re-check when offers change
+
+  useEffect(() => {
+    const fetchMyJobs = async () => {
+      if (role !== 'casting' || !currentUser?.id) return;
+      const { data } = await supabase
+        .from('jobs')
+        .select('id, title')
+        .eq('casting_id', currentUser.id)
+        .eq('status', 'open');
+      if (data) setMyJobs(data as any);
+    };
+    fetchMyJobs();
+  }, [role, currentUser?.id]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -103,6 +118,7 @@ const DetailPage: React.FC = () => {
         receiver_id: profile.id,
         sender_role: role || 'casting',
         mediator_id: profile.agency_id,
+        job_id: selectedJobId || null,
         status: 'pending',
         timestamp: new Date().toISOString()
       };
@@ -117,7 +133,7 @@ const DetailPage: React.FC = () => {
       }
     } else {
       try {
-        await sendOffer(profile.id);
+        await sendOffer(profile.id, selectedJobId || undefined);
         alert(t('offer.send_success'));
         const reached = await checkOfferLimit();
         setIsLimitReached(reached);
@@ -163,8 +179,23 @@ const DetailPage: React.FC = () => {
               </div>
             )}
           </div>
+          {role === 'casting' && isTalentDetail && myJobs.length > 0 && !existingOffer && (
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>{t('detail.select_job_label')}</label>
+              <select
+                value={selectedJobId}
+                onChange={(e) => setSelectedJobId(e.target.value)}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-main)' }}
+              >
+                <option value="">{t('detail.select_job_none')}</option>
+                {myJobs.map(job => (
+                  <option key={job.id} value={job.id}>{job.title}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button 
+            <button
               onClick={() => toggleLike(profile.id)}
               className="btn" 
               style={{ 

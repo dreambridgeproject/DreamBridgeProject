@@ -16,7 +16,7 @@ interface UserContextType {
   likes: string[];
   toggleLike: (id: string) => void;
   offers: Offer[];
-  sendOffer: (receiverId: string) => Promise<void>;
+  sendOffer: (receiverId: string, jobId?: string) => Promise<void>;
   updateOfferStatus: (offerId: string, status: 'approved' | 'declined') => Promise<void>;
   messages: ChatMessage[];
   sendMessage: (offerId: string, text: string) => Promise<void>;
@@ -69,8 +69,8 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const fetchOffers = async (userId: string, userRole: UserRole) => {
-    let query = supabase.from('offers').select('*');
-    
+    let query = supabase.from('offers').select('*, job:jobs(title)');
+
     if (userRole === 'agency') {
       query = query.or(`sender_id.eq.${userId},receiver_id.eq.${userId},mediator_id.eq.${userId}`);
     } else {
@@ -87,7 +87,9 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
         status: o.status,
         timestamp: o.timestamp,
         lastMessage: o.last_message,
-        mediatorId: o.mediator_id
+        mediatorId: o.mediator_id,
+        jobId: o.job_id,
+        jobTitle: o.job?.title
       })));
     }
   };
@@ -347,14 +349,15 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     return data;
   };
 
-  const sendOffer = async (receiverId: string) => {
+  const sendOffer = async (receiverId: string, jobId?: string) => {
     if (!user) return;
     const newOffer: any = {
       sender_id: user.id,
       receiver_id: receiverId,
       status: 'pending' as const,
       sender_role: role || 'casting',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      job_id: jobId || null
     };
 
     try {
@@ -378,7 +381,8 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     status: o.status,
     timestamp: o.timestamp,
     lastMessage: o.last_message,
-    mediatorId: o.mediator_id
+    mediatorId: o.mediator_id,
+    jobId: o.job_id
   });
 
   const updateOfferStatus = async (offerId: string, status: 'approved' | 'declined') => {

@@ -275,6 +275,7 @@ const ChatPage: React.FC = () => {
           />
           <div>
             <h2 style={{ fontSize: '1.125rem', color: 'var(--text-main)', margin: 0 }}>{partner.full_name || partner.name}</h2>
+            {(currentOffer as any).jobTitle && <div style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 600 }}>{t('offer.for_job')}: {(currentOffer as any).jobTitle}</div>}
             {isMediated && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{t('chat.mediated_info').replace('{agency}', agency?.full_name || agency?.name || '').replace('{casting}', casting?.full_name || casting?.name || '').replace('{talent}', talent?.full_name || talent?.name || '')}</div>}
           </div>
         </div>

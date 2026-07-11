@@ -80,6 +80,9 @@ const OffersPage: React.FC = () => {
         />
         <div style={{ flex: 1 }}>
           <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>{partner.full_name || partner.name}</h3>
+          {offer.jobTitle && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 700, marginBottom: '0.25rem' }}>{t('offer.for_job')}: {offer.jobTitle}</div>
+          )}
           <StatusBadge status={offer.status} />
         </div>
         

@@ -93,6 +93,8 @@ export interface Offer {
   timestamp: string;
   lastMessage?: string;
   mediatorId?: string; // Agency ID for mediated offers
+  jobId?: string; // Which job posting this scout is for, if any
+  jobTitle?: string;
 }
 
 export interface Invitation {
