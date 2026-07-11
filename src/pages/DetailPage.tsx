@@ -5,8 +5,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { logView } from '../lib/analytics';
 import type { Profile } from '../types';
-import { 
-  Heart, MapPin, ChevronLeft, ShieldCheck, 
+import {
+  Heart, MapPin, ChevronLeft, ShieldCheck, Sparkles,
   Lock, Image, Video, Music, Instagram, Twitter, Users
 } from 'lucide-react';
 
@@ -152,6 +152,11 @@ const DetailPage: React.FC = () => {
                 <ShieldCheck size={14} /> {t('detail.verified')}
               </div>
             )}
+            {profile.skill_review_status === 'approved' && (
+              <div style={{ position: 'absolute', top: profile.verification_status === 'verified' ? '3rem' : '1rem', right: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Sparkles size={14} /> {t('detail.skill_verified')}
+              </div>
+            )}
             {isAffiliated && (
               <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '2rem', fontSize: '0.7rem', fontWeight: 700 }}>
                 {t('mypage.affiliated')}
@@ -196,6 +201,7 @@ const DetailPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <h1 style={{ fontSize: '2rem' }}>{profile.full_name || profile.name}</h1>
             {profile.verification_status === 'verified' && <ShieldCheck size={24} style={{ color: 'var(--accent)' }} />}
+            {profile.skill_review_status === 'approved' && <Sparkles size={24} style={{ color: '#3b82f6' }} />}
           </div>
           
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
@@ -224,6 +230,8 @@ const DetailPage: React.FC = () => {
                 <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.company_description || t('detail.no_bio')}</p>
                 <h2 style={{ ...sectionTitleStyle, marginTop: '2rem' }}>{t('auth.contact_info')}</h2>
                 <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.contact_info || t('detail.no_bio')}</p>
+                <h2 style={{ ...sectionTitleStyle, marginTop: '2rem' }}>{t('auth.past_works')}</h2>
+                <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.past_works || t('detail.no_bio')}</p>
               </section>
             ) : (
               <section>

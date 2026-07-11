@@ -19,6 +19,8 @@ const JobsPage: React.FC = () => {
   const [filterReward, setFilterReward] = useState('');
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [showPostModal, setShowPostModal] = useState(false);
+  const [agencyTalents, setAgencyTalents] = useState<{ id: string; full_name?: string; name?: string }[]>([]);
+  const [selectedTalentByJob, setSelectedTalentByJob] = useState<Record<string, string>>({});
 
   const locations = [
     '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
@@ -64,6 +66,19 @@ const JobsPage: React.FC = () => {
     fetchJobs();
   }, [fetchJobs]);
 
+  useEffect(() => {
+    const fetchAgencyTalents = async () => {
+      if (!user || currentUser?.role !== 'agency') return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('agency_id', user.id)
+        .eq('role', 'talent');
+      if (data) setAgencyTalents(data as any);
+    };
+    fetchAgencyTalents();
+  }, [user, currentUser?.role]);
+
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          job.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -74,29 +89,35 @@ const JobsPage: React.FC = () => {
     return matchesSearch && matchesTags && matchesLocation && matchesReward;
   });
 
-  const handleApply = async (jobId: string) => {
+  const handleApply = async (jobId: string, onBehalfOfTalentId?: string) => {
     if (!user) {
       alert(t('job.need_login'));
       return;
     }
 
-    if (currentUser?.role !== 'talent') {
+    let talentId = user.id;
+
+    if (currentUser?.role === 'agency') {
+      if (!onBehalfOfTalentId) {
+        alert(t('job.select_talent_first'));
+        return;
+      }
+      talentId = onBehalfOfTalentId;
+    } else if (currentUser?.role !== 'talent') {
       alert(t('job.only_talent'));
       return;
-    }
-
-    if (currentUser?.affiliation_status === 'affiliated') {
+    } else if (currentUser?.affiliation_status === 'affiliated') {
       alert(t('job.restricted_talent'));
       return;
     }
 
     setApplyingId(jobId);
-    
+
     const { error } = await supabase
       .from('job_applications')
       .insert({
         job_id: jobId,
-        talent_id: user.id,
+        talent_id: talentId,
         status: 'pending'
       });
 
@@ -284,25 +305,51 @@ const JobsPage: React.FC = () => {
                     {job.description}
                   </p>
 
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button 
-                      className="btn btn-primary" 
-                      style={{ flex: 1 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleApply(job.id);
-                      }}
-                      disabled={applyingId === job.id}
-                    >
-                      {applyingId === job.id ? t('job.applying') : t('job.apply')}
-                    </button>
-                    <button 
-                      className="btn btn-outline" 
-                      onClick={() => navigate(`/detail/casting/${job.castingId}`)}
-                    >
-                      {t('job.view_detail')}
-                    </button>
-                  </div>
+                  {currentUser?.role === 'agency' ? (
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <select
+                        value={selectedTalentByJob[job.id] || ''}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setSelectedTalentByJob({ ...selectedTalentByJob, [job.id]: e.target.value })}
+                        style={{ ...modalInputStyle, flex: 1, fontSize: '0.875rem' }}
+                      >
+                        <option value="">{t('job.select_talent_placeholder')}</option>
+                        {agencyTalents.map(talent => (
+                          <option key={talent.id} value={talent.id}>{talent.full_name || talent.name}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="btn btn-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleApply(job.id, selectedTalentByJob[job.id]);
+                        }}
+                        disabled={applyingId === job.id || !selectedTalentByJob[job.id]}
+                      >
+                        {applyingId === job.id ? t('job.applying') : t('job.apply_on_behalf')}
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button
+                        className="btn btn-primary"
+                        style={{ flex: 1 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleApply(job.id);
+                        }}
+                        disabled={applyingId === job.id}
+                      >
+                        {applyingId === job.id ? t('job.applying') : t('job.apply')}
+                      </button>
+                      <button
+                        className="btn btn-outline"
+                        onClick={() => navigate(`/detail/casting/${job.castingId}`)}
+                      >
+                        {t('job.view_detail')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

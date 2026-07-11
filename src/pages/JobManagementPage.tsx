@@ -85,7 +85,7 @@ const JobManagementPage: React.FC = () => {
     fetchData();
   }, [user]);
 
-  const handleUpdateStatus = async (appId: string, status: 'approved' | 'rejected', talentId: string) => {
+  const handleUpdateStatus = async (appId: string, status: 'approved' | 'rejected', talent: Profile) => {
     const { error } = await supabase
       .from('job_applications')
       .update({ status })
@@ -95,10 +95,15 @@ const JobManagementPage: React.FC = () => {
       alert(t('job.manage_update_fail') + ': ' + error.message);
     } else {
       if (status === 'approved') {
-        // Create an "offer" or "chat room" automatically
+        // Create an "offer" or "chat room" automatically. If the talent is
+        // agency-affiliated, mediate through the agency (3-party chat),
+        // matching the direct-scout flow in DetailPage.tsx.
+        const isAffiliated = talent.affiliation_status === 'affiliated' && !!talent.agency_id;
         await supabase.from('offers').insert({
           sender_id: user?.id,
-          receiver_id: talentId,
+          receiver_id: talent.id,
+          sender_role: 'casting',
+          mediator_id: isAffiliated ? talent.agency_id : null,
           status: 'approved',
           message: t('job.manage_chat_welcome')
         });
@@ -227,10 +232,10 @@ const JobManagementPage: React.FC = () => {
                   </button>
                   {app.status === 'pending' && (
                     <>
-                      <button onClick={() => handleUpdateStatus(app.id, 'approved', app.talent_id)} className="btn btn-primary" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: '#10b981' }}>
+                      <button onClick={() => handleUpdateStatus(app.id, 'approved', app.talent)} className="btn btn-primary" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: '#10b981' }}>
                         <Check size={16} /> {app.talent.affiliation_status === 'affiliated' ? t('job.manage_approve_btn_casting') : t('job.manage_approve_btn_free')}
                       </button>
-                      <button onClick={() => handleUpdateStatus(app.id, 'rejected', app.talent_id)} className="btn" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+                      <button onClick={() => handleUpdateStatus(app.id, 'rejected', app.talent)} className="btn" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
                         <X size={16} /> {t('job.manage_reject_btn')}
                       </button>
                     </>

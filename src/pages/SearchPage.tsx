@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { logSearch } from '../lib/analytics';
-import { Search, MapPin, User, Users, Camera } from 'lucide-react';
+import { Search, MapPin, User, Users, Camera, ShieldCheck, Sparkles } from 'lucide-react';
 import type { Profile } from '../types';
 
 interface SearchPageProps {
@@ -13,7 +13,7 @@ interface SearchPageProps {
 
 const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
   const { t } = useLanguage();
-  const { currentUser, role } = useUser();
+  const { currentUser, role, loading: authLoading, profileLoading } = useUser();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
     skill: ''
   });
   
-  const [sortBy, setSortBy] = useState<'newest' | 'updated' | 'verified'>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'updated' | 'verified'>('verified');
   
   const initialGenre = 'すべて';
   const [selectedGenre, setSelectedGenre] = useState(initialGenre);
@@ -185,6 +185,12 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
     { key: 'ライバー', label: t('skill.liver') },
     { key: 'YouTuber', label: t('skill.youtuber') }
   ];
+
+  // Talent search is for agencies/casting companies only; block talents from browsing peers.
+  // Wait for the profile fetch (not just auth) to resolve, since `role` is only populated after it.
+  if (!authLoading && !profileLoading && type === 'talent' && role === 'talent') {
+    return <Navigate to="/search/agencies" replace />;
+  }
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
@@ -390,6 +396,24 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
                   {user.photos?.length > 0 && (
                     <div style={{ position: 'absolute', bottom: '0.5rem', right: '0.5rem', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       <Camera size={12} /> {user.photos.length}
+                    </div>
+                  )}
+                  <div style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    {user.verification_status === 'verified' && (
+                      <div style={{ backgroundColor: 'var(--accent)', color: 'var(--secondary)', padding: '0.15rem 0.5rem', borderRadius: '2rem', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                        <ShieldCheck size={12} /> {t('detail.verified')}
+                      </div>
+                    )}
+                    {user.skill_review_status === 'approved' && (
+                      <div style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.15rem 0.5rem', borderRadius: '2rem', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                        <Sparkles size={12} /> {t('detail.skill_verified')}
+                      </div>
+                    )}
+                  </div>
+                  {/* PR (paid boost) is a separate signal from verification/skill review and never changes sort order */}
+                  {user.boosted_until && new Date(user.boosted_until) > new Date() && (
+                    <div style={{ position: 'absolute', bottom: '0.5rem', left: '0.5rem', backgroundColor: 'rgba(212, 175, 55, 0.9)', color: '#1a1a1a', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800 }}>
+                      PR
                     </div>
                   )}
                 </div>

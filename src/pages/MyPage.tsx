@@ -35,6 +35,7 @@ const MyPage: React.FC = () => {
     skill_tags: [] as string[],
     company_description: '',
     contact_info: '',
+    past_works: '',
     gender: 'none' as any
   });
 
@@ -107,6 +108,7 @@ const MyPage: React.FC = () => {
         skill_tags: [],
         company_description: '',
         contact_info: '',
+        past_works: '',
         representative_name: '',
         gender: 'none',
         is_banned: true
@@ -138,6 +140,7 @@ const MyPage: React.FC = () => {
       skill_tags: currentUser?.skill_tags || [],
       company_description: currentUser?.company_description || '',
       contact_info: currentUser?.contact_info || '',
+      past_works: currentUser?.past_works || '',
       gender: currentUser?.gender || 'none'
     });
     setIsEditing(true);
@@ -211,6 +214,7 @@ const MyPage: React.FC = () => {
       if (isCasting) {
         updates.company_description = editData.company_description;
         updates.contact_info = editData.contact_info;
+        updates.past_works = editData.past_works;
       }
 
       await updateProfile(updates);
@@ -492,12 +496,18 @@ const MyPage: React.FC = () => {
                           onChange={e => setEditData({...editData, company_description: e.target.value})} 
                           style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} 
                         />
-                        <input 
-                          type="text" 
-                          placeholder={t('auth.contact_info')} 
-                          value={editData.contact_info} 
-                          onChange={e => setEditData({...editData, contact_info: e.target.value})} 
-                          style={inputStyle} 
+                        <input
+                          type="text"
+                          placeholder={t('auth.contact_info')}
+                          value={editData.contact_info}
+                          onChange={e => setEditData({...editData, contact_info: e.target.value})}
+                          style={inputStyle}
+                        />
+                        <textarea
+                          placeholder={t('auth.past_works')}
+                          value={editData.past_works}
+                          onChange={e => setEditData({...editData, past_works: e.target.value})}
+                          style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
                         />
                       </>
                     )}
@@ -598,7 +608,31 @@ const MyPage: React.FC = () => {
                           {getAffiliationBadge(currentUser?.affiliation_status).label}
                         </span>
                       )}
+                      {isTalent && currentUser?.skill_review_status === 'approved' && (
+                        <span style={{ backgroundColor: '#3b82f622', color: '#3b82f6', padding: '0.25rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, border: '1px solid #3b82f644' }}>
+                          {t('detail.skill_verified')}
+                        </span>
+                      )}
                     </div>
+                    {isTalent && (
+                      <div style={{ marginBottom: '1rem' }}>
+                        {(!currentUser?.skill_review_status || currentUser.skill_review_status === 'none' || currentUser.skill_review_status === 'rejected') && (
+                          <button
+                            className="btn btn-outline"
+                            style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem' }}
+                            onClick={async () => {
+                              await updateProfile({ skill_review_status: 'reviewing' });
+                              alert(t('mypage.skill_review_requested'));
+                            }}
+                          >
+                            {currentUser?.skill_review_status === 'rejected' ? t('mypage.skill_review_reapply') : t('mypage.skill_review_request')}
+                          </button>
+                        )}
+                        {currentUser?.skill_review_status === 'reviewing' && (
+                          <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{t('mypage.skill_review_pending')}</span>
+                        )}
+                      </div>
+                    )}
                     <div style={{ 
                       display: 'flex', 
                       flexWrap: 'wrap', 
@@ -624,6 +658,8 @@ const MyPage: React.FC = () => {
                         <p style={{ margin: 0 }}>{currentUser?.company_description || t('mypage.not_set')}</p>
                         <div style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.75rem', marginTop: '0.5rem', marginBottom: '0.25rem' }}>{t('auth.contact_info')}</div>
                         <p style={{ margin: 0 }}>{currentUser?.contact_info || t('mypage.not_set')}</p>
+                        <div style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.75rem', marginTop: '0.5rem', marginBottom: '0.25rem' }}>{t('auth.past_works')}</div>
+                        <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{currentUser?.past_works || t('mypage.not_set')}</p>
                       </div>
                     )}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem', justifyContent: window.innerWidth < 768 ? 'center' : 'flex-start' }}>

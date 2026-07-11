@@ -65,6 +65,7 @@ const LegalPage: React.FC = () => {
                 <li>公序良俗に反する行為</li>
                 <li>反社会的勢力への利益供与</li>
                 <li>法令に違反する求人・勧誘行為</li>
+                <li>オーディション・キャスティング等を名目に、レッスン料その他名目を問わず金銭を要求する行為</li>
               </ul>
 
               <h3 style={h3Style}>第8条（本サービスの提供の停止等）</h3>
@@ -104,6 +105,7 @@ const LegalPage: React.FC = () => {
                 <li>Acts that infringe on copyrights, trademarks, or other intellectual property rights</li>
                 <li>Acts that destroy or interfere with the functions of DreamBridge's or third parties' servers or networks</li>
                 <li>Direct solicitation or "poaching" of affiliated talents</li>
+                <li>Demanding lesson fees or any other payment from talents under the guise of an audition or casting opportunity</li>
                 <li>Commercial use of information obtained through the Service</li>
                 <li>Other acts deemed inappropriate by DreamBridge</li>
               </ul>

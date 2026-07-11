@@ -13,10 +13,11 @@ const AdminDashboard: React.FC = () => {
   const [agencies, setAgencies] = useState<Profile[]>([]);
   const [castingCompanies, setCastingCompanies] = useState<Profile[]>([]);
   const [pending, setPending] = useState<Profile[]>([]);
+  const [skillPending, setSkillPending] = useState<Profile[]>([]);
   const [reports, setReports] = useState<any[]>([]);
   const [banned, setBanned] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'agencies' | 'casting' | 'pending' | 'reports' | 'banned'>('pending');
+  const [activeTab, setActiveTab] = useState<'agencies' | 'casting' | 'pending' | 'skills' | 'reports' | 'banned'>('pending');
 
   const fetchData = async () => {
     setLoading(true);
@@ -44,6 +45,13 @@ const AdminDashboard: React.FC = () => {
       .eq('verification_status', 'reviewing')
       .order('id', { ascending: false });
 
+    // Fetch profiles pending skill review
+    const { data: skillPendingData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('skill_review_status', 'reviewing')
+      .order('id', { ascending: false });
+
     // Fetch reports with profile info
     const { data: reportData } = await supabase
       .from('reports')
@@ -60,6 +68,7 @@ const AdminDashboard: React.FC = () => {
     if (agencyData) setAgencies(agencyData as Profile[]);
     if (castingData) setCastingCompanies(castingData as Profile[]);
     if (pendingData) setPending(pendingData as Profile[]);
+    if (skillPendingData) setSkillPending(skillPendingData as Profile[]);
     if (reportData) setReports(reportData);
     if (bannedData) setBanned(bannedData as Profile[]);
     
@@ -107,6 +116,20 @@ const AdminDashboard: React.FC = () => {
     } else {
       fetchData();
       alert(status === 'verified' ? t('admin.update_success') : t('admin.revoke_success'));
+    }
+  };
+
+  const handleUpdateSkillStatus = async (id: string, status: 'approved' | 'rejected') => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ skill_review_status: status })
+      .eq('id', id);
+
+    if (error) {
+      alert(t('admin.update_fail'));
+    } else {
+      fetchData();
+      alert(status === 'approved' ? t('admin.update_success') : t('admin.revoke_success'));
     }
   };
 
@@ -174,7 +197,21 @@ const AdminDashboard: React.FC = () => {
         >
           {t('admin.tab_pending')} ({pending.length})
         </button>
-        <button 
+        <button
+          onClick={() => setActiveTab('skills')}
+          style={{
+            padding: '1rem 2rem',
+            background: 'none',
+            border: 'none',
+            color: activeTab === 'skills' ? 'var(--accent)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'skills' ? '2px solid var(--accent)' : 'none',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >
+          スキル確認 ({skillPending.length})
+        </button>
+        <button
           onClick={() => setActiveTab('agencies')}
           style={{ 
             padding: '1rem 2rem', 
@@ -296,6 +333,55 @@ const AdminDashboard: React.FC = () => {
                         <button 
                           onClick={() => handleUpdateStatus(item.id, 'rejected', 'pending')} 
                           className="btn" 
+                          style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
+                        >
+                          <X size={14} /> {t('admin.reject_btn')}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        ) : activeTab === 'skills' ? (
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+            <thead>
+              <tr style={{ backgroundColor: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
+                <th style={thStyle}>{t('admin.th_id')}</th>
+                <th style={thStyle}>プロフィール</th>
+                <th style={thStyle}>{t('admin.th_actions_row')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {skillPending.length === 0 ? (
+                <tr><td colSpan={3} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>{t('admin.no_pending')}</td></tr>
+              ) : (
+                skillPending.map(item => (
+                  <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={tdStyle}>
+                      <div style={{ fontWeight: 600 }}>{item.full_name || item.name}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.id}</div>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{ fontSize: '0.8rem' }}>
+                        <div>{t('detail.skills')}: {item.skills || '-'}</div>
+                        <div>{t('mypage.genres')}: {item.genres?.join(', ') || '-'}</div>
+                        <div>{t('detail.videos')}: {item.videos?.length || 0} / {t('detail.photos')}: {item.photos?.length || 0}</div>
+                      </div>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => handleUpdateSkillStatus(item.id, 'approved')}
+                          className="btn btn-primary"
+                          style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                        >
+                          <Check size={14} /> {t('admin.approve_btn')}
+                        </button>
+                        <button
+                          onClick={() => handleUpdateSkillStatus(item.id, 'rejected')}
+                          className="btn"
                           style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
                         >
                           <X size={14} /> {t('admin.reject_btn')}

@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     plan TEXT DEFAULT 'free',
     verification_status TEXT DEFAULT 'none', -- none, reviewing, verified, rejected
     verification_doc_url TEXT,
+    skill_review_status TEXT DEFAULT 'none', -- none, reviewing, approved, rejected
+    boosted_until TIMESTAMP WITH TIME ZONE, -- paid PR exposure window; independent of verification/skill review, never affects sort order
     parental_consent_name TEXT,
     parental_consent_contact TEXT,
     blocked_user_ids UUID[] DEFAULT '{}',
@@ -36,6 +38,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     skill_tags TEXT[] DEFAULT '{}',
     company_description TEXT,
     contact_info TEXT,
+    past_works TEXT,
     representative_name TEXT,
     gender TEXT DEFAULT 'none',
     is_banned BOOLEAN DEFAULT false,
@@ -219,9 +222,29 @@ USING (
     )
 );
 
+-- Helper: looks up the caller's own role without going through RLS again
+-- (SECURITY DEFINER bypasses RLS, which avoids infinite recursion when a
+-- policy on profiles needs to check the requester's own role).
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS TEXT
+LANGUAGE SQL
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT role FROM public.profiles WHERE id = auth.uid();
+$$;
+
 -- Basic Policies (Simplified for development)
--- Profile: Everyone can view, only owner can edit
-CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
+-- Profile: talent profiles are only visible to agencies/casting companies (and the talent themselves);
+-- agency/casting profiles remain public so talents can browse them.
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+DROP POLICY IF EXISTS "Role-based profile visibility" ON public.profiles;
+CREATE POLICY "Role-based profile visibility" ON public.profiles FOR SELECT USING (
+    auth.uid() = id
+    OR role != 'talent'
+    OR public.get_my_role() IN ('agency', 'casting')
+);
 CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
@@ -254,6 +277,18 @@ BEGIN
         'スカウトが届いています。詳細を確認しましょう。',
         '/offers'
     );
+
+    IF NEW.mediator_id IS NOT NULL THEN
+        INSERT INTO public.notifications (user_id, type, title, message, link)
+        VALUES (
+            NEW.mediator_id,
+            'offer_received',
+            '所属タレントへのオファーが届きました',
+            '制作会社から所属タレントへのオファーが届いています。内容を確認しましょう。',
+            '/agency/talents'
+        );
+    END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

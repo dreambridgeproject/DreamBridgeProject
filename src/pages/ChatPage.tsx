@@ -502,6 +502,7 @@ const ChatPage: React.FC = () => {
                   <option value="harassment">{t('safety.reason_harassment')}</option>
                   <option value="scam">{t('safety.reason_scam')}</option>
                   <option value="offline_meeting">{t('safety.reason_offline')}</option>
+                  <option value="lesson_fee_demand">{t('safety.reason_lesson_fee')}</option>
                   <option value="other">{t('safety.reason_other')}</option>
                 </select>
               </div>

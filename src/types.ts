@@ -35,7 +35,9 @@ export interface Profile {
   videos: string[];
   audios: string[];
   plan: 'free' | 'standard' | 'pro' | 'enterprise' | 'premium';
+  boosted_until?: string | null; // paid PR exposure window; independent of verification_status/skill_review_status and never affects sort order
   verification_status: 'none' | 'reviewing' | 'verified' | 'rejected';
+  skill_review_status?: 'none' | 'reviewing' | 'approved' | 'rejected';
   verification_doc_url?: string;
   parental_consent_name?: string;
   parental_consent_contact?: string;
@@ -50,6 +52,7 @@ export interface Profile {
   skill_tags?: SkillTag[];
   company_description?: string;
   contact_info?: string;
+  past_works?: string;
   representative_name?: string;
   gender?: 'male' | 'female' | 'other' | 'none';
 }
@@ -126,7 +129,7 @@ export interface Report {
   id: string;
   reporterId: string;
   targetId: string;
-  reason: 'inappropriate_content' | 'harassment' | 'scam' | 'offline_meeting' | 'other';
+  reason: 'inappropriate_content' | 'harassment' | 'scam' | 'offline_meeting' | 'lesson_fee_demand' | 'other';
   description: string;
   timestamp: string;
   status: 'pending' | 'resolved' | 'dismissed';
