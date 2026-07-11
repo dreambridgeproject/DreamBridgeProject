@@ -21,6 +21,7 @@ const JobsPage: React.FC = () => {
   const [showPostModal, setShowPostModal] = useState(false);
   const [agencyTalents, setAgencyTalents] = useState<{ id: string; full_name?: string; name?: string }[]>([]);
   const [selectedTalentByJob, setSelectedTalentByJob] = useState<Record<string, string>>({});
+  const [appliedPairs, setAppliedPairs] = useState<Set<string>>(new Set());
 
   const locations = [
     '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
@@ -79,6 +80,29 @@ const JobsPage: React.FC = () => {
     fetchAgencyTalents();
   }, [user, currentUser?.role]);
 
+  useEffect(() => {
+    const fetchExistingApplications = async () => {
+      if (!user || !currentUser?.role) return;
+
+      const talentIds = currentUser.role === 'agency'
+        ? agencyTalents.map(t => t.id)
+        : currentUser.role === 'talent'
+          ? [user.id]
+          : [];
+      if (talentIds.length === 0) return;
+
+      const { data } = await supabase
+        .from('job_applications')
+        .select('job_id, talent_id')
+        .in('talent_id', talentIds);
+
+      if (data) {
+        setAppliedPairs(new Set(data.map((a: any) => `${a.job_id}::${a.talent_id}`)));
+      }
+    };
+    fetchExistingApplications();
+  }, [user, currentUser?.role, agencyTalents]);
+
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          job.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -126,11 +150,13 @@ const JobsPage: React.FC = () => {
     if (error) {
       if (error.code === '23505') {
         alert(t('job.already_applied'));
+        setAppliedPairs(prev => new Set(prev).add(`${jobId}::${talentId}`));
       } else {
         alert(t('job.apply_fail') + ': ' + error.message);
       }
     } else {
       alert(t('job.apply_success'));
+      setAppliedPairs(prev => new Set(prev).add(`${jobId}::${talentId}`));
     }
   };
 
@@ -318,30 +344,41 @@ const JobsPage: React.FC = () => {
                           <option key={talent.id} value={talent.id}>{talent.full_name || talent.name}</option>
                         ))}
                       </select>
-                      <button
-                        className="btn btn-primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleApply(job.id, selectedTalentByJob[job.id]);
-                        }}
-                        disabled={applyingId === job.id || !selectedTalentByJob[job.id]}
-                      >
-                        {applyingId === job.id ? t('job.applying') : t('job.apply_on_behalf')}
-                      </button>
+                      {(() => {
+                        const selectedTalent = selectedTalentByJob[job.id];
+                        const alreadyApplied = !!selectedTalent && appliedPairs.has(`${job.id}::${selectedTalent}`);
+                        return (
+                          <button
+                            className="btn btn-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApply(job.id, selectedTalent);
+                            }}
+                            disabled={applyingId === job.id || !selectedTalent || alreadyApplied}
+                          >
+                            {applyingId === job.id ? t('job.applying') : alreadyApplied ? t('job.already_applied_btn') : t('job.apply_on_behalf')}
+                          </button>
+                        );
+                      })()}
                     </div>
                   ) : (
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                      <button
-                        className="btn btn-primary"
-                        style={{ flex: 1 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleApply(job.id);
-                        }}
-                        disabled={applyingId === job.id}
-                      >
-                        {applyingId === job.id ? t('job.applying') : t('job.apply')}
-                      </button>
+                      {(() => {
+                        const alreadyApplied = !!user && appliedPairs.has(`${job.id}::${user.id}`);
+                        return (
+                          <button
+                            className="btn btn-primary"
+                            style={{ flex: 1, opacity: alreadyApplied ? 0.6 : 1 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApply(job.id);
+                            }}
+                            disabled={applyingId === job.id || alreadyApplied}
+                          >
+                            {applyingId === job.id ? t('job.applying') : alreadyApplied ? t('job.already_applied_btn') : t('job.apply')}
+                          </button>
+                        );
+                      })()}
                       <button
                         className="btn btn-outline"
                         onClick={() => navigate(`/detail/casting/${job.castingId}`)}

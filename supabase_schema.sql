@@ -297,6 +297,33 @@ CREATE TRIGGER on_new_offer
 AFTER INSERT ON public.offers
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_offer_notification();
 
+-- Trigger for new job application (notifies the casting company that posted the job)
+CREATE OR REPLACE FUNCTION public.handle_new_application_notification()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_casting_id UUID;
+BEGIN
+    SELECT casting_id INTO v_casting_id FROM public.jobs WHERE id = NEW.job_id;
+
+    IF v_casting_id IS NOT NULL THEN
+        INSERT INTO public.notifications (user_id, type, title, message, link)
+        VALUES (
+            v_casting_id,
+            'application_received',
+            '新しい応募が届きました',
+            '投稿した案件に応募がありました。内容を確認しましょう。',
+            '/jobs/manage'
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER on_new_job_application
+AFTER INSERT ON public.job_applications
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_application_notification();
+
 -- Trigger for offer status change
 CREATE OR REPLACE FUNCTION public.handle_offer_status_notification()
 RETURNS TRIGGER AS $$

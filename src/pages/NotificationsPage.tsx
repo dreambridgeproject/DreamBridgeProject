@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Bell, CheckCircle2, XCircle, Send, ChevronRight } from 'lucide-react';
+import { Bell, CheckCircle2, XCircle, Send, Briefcase, ChevronRight } from 'lucide-react';
 
 const NotificationsPage: React.FC = () => {
   const { currentUser, notifications, markNotificationAsRead, clearNotifications } = useUser();
@@ -17,6 +17,7 @@ const NotificationsPage: React.FC = () => {
       case 'offer_received': return <Send size={20} style={{ color: 'var(--accent)' }} />;
       case 'offer_approved': return <CheckCircle2 size={20} style={{ color: '#10b981' }} />;
       case 'offer_declined': return <XCircle size={20} style={{ color: 'var(--error)' }} />;
+      case 'application_received': return <Briefcase size={20} style={{ color: 'var(--accent)' }} />;
       default: return <Bell size={20} />;
     }
   };

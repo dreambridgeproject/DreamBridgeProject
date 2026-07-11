@@ -117,7 +117,7 @@ export interface ChatMessage {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'offer_received' | 'offer_approved' | 'offer_declined' | 'new_message';
+  type: 'offer_received' | 'offer_approved' | 'offer_declined' | 'new_message' | 'application_received';
   title: string;
   message: string;
   link: string;
