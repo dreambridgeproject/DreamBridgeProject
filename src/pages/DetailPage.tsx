@@ -266,7 +266,7 @@ const DetailPage: React.FC = () => {
               </section>
             ) : (
               <section>
-                <h2 style={sectionTitleStyle}>{t('detail.bio_title')}</h2>
+                <h2 style={sectionTitleStyle}>{t(isTalentDetail ? 'detail.bio_title_talent' : 'detail.bio_title_agency')}</h2>
                 <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{profile.bio || t('detail.no_bio')}</p>
               </section>
             )}
