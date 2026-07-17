@@ -11,6 +11,15 @@ const OffersPage: React.FC = () => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [partnerProfiles, setPartnerProfiles] = useState<Record<string, Profile>>({});
+  const [approvingOfferId, setApprovingOfferId] = useState<string | null>(null);
+  const [scheduledDate, setScheduledDate] = useState('');
+
+  const confirmApproval = (offerId: string) => {
+    if (!scheduledDate) return;
+    updateOfferStatus(offerId, 'approved', new Date(scheduledDate).toISOString());
+    setApprovingOfferId(null);
+    setScheduledDate('');
+  };
 
   React.useEffect(() => {
     const fetchPartnerProfiles = async () => {
@@ -86,27 +95,56 @@ const OffersPage: React.FC = () => {
           <StatusBadge status={offer.status} />
         </div>
         
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {activeTab === 'received' && offer.status === 'pending' ? (
-            <>
-              <button 
-                onClick={() => updateOfferStatus(offer.id, 'approved')}
-                className="btn" 
-                style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
-              >
-                {role === 'talent' 
-                  ? (offer.senderRole === 'agency' ? t('scout.approve_btn') : t('direct_offer.approve_btn'))
-                  : t('agency_offer.approve_btn')
-                }
-              </button>
-              <button 
-                onClick={() => updateOfferStatus(offer.id, 'declined')}
-                className="btn" 
-                style={{ backgroundColor: 'var(--error)', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
-              >
-                {t('offer.decline_btn')}
-              </button>
-            </>
+            approvingOfferId === offer.id ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('offer.schedule_prompt')}</span>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <input
+                    type="datetime-local"
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    style={{ padding: '0.4rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: '0.8rem' }}
+                  />
+                  <button
+                    onClick={() => confirmApproval(offer.id)}
+                    disabled={!scheduledDate}
+                    className="btn"
+                    style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 0.75rem', border: 'none', borderRadius: 'var(--radius-sm)', cursor: scheduledDate ? 'pointer' : 'not-allowed', opacity: scheduledDate ? 1 : 0.6 }}
+                  >
+                    {t('offer.schedule_confirm')}
+                  </button>
+                  <button
+                    onClick={() => { setApprovingOfferId(null); setScheduledDate(''); }}
+                    className="btn btn-outline"
+                    style={{ padding: '0.5rem 0.75rem' }}
+                  >
+                    {t('offer.schedule_cancel')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => setApprovingOfferId(offer.id)}
+                  className="btn"
+                  style={{ backgroundColor: '#10b981', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                >
+                  {role === 'talent'
+                    ? (offer.senderRole === 'agency' ? t('scout.approve_btn') : t('direct_offer.approve_btn'))
+                    : t('agency_offer.approve_btn')
+                  }
+                </button>
+                <button
+                  onClick={() => updateOfferStatus(offer.id, 'declined')}
+                  className="btn"
+                  style={{ backgroundColor: 'var(--error)', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                >
+                  {t('offer.decline_btn')}
+                </button>
+              </>
+            )
           ) : (
             <Link 
               to={offer.status === 'approved' ? `/chat/${offer.id}` : `/detail/${isPartnerTalent ? 'talent' : 'agency'}/${partner.id}`} 

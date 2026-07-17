@@ -6,9 +6,10 @@ import { supabase } from '../lib/supabase';
 import { logView } from '../lib/analytics';
 import type { Profile } from '../types';
 import {
-  Heart, MapPin, ChevronLeft, ShieldCheck, Sparkles,
+  Heart, MapPin, ChevronLeft, ShieldCheck, Sparkles, Award,
   Lock, Image, Video, Music, Instagram, Twitter, Users
 } from 'lucide-react';
+import { shouldShowAttendanceScore } from '../lib/attendanceScore';
 
 const DetailPage: React.FC = () => {
   const { id } = useParams<{ type: 'talent' | 'agency' | 'casting'; id: string }>();
@@ -171,6 +172,15 @@ const DetailPage: React.FC = () => {
             {profile.skill_review_status === 'approved' && (
               <div style={{ position: 'absolute', top: profile.verification_status === 'verified' ? '3rem' : '1rem', right: '1rem', backgroundColor: '#3b82f6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 <Sparkles size={14} /> {t('detail.skill_verified')}
+              </div>
+            )}
+            {shouldShowAttendanceScore(profile) && (
+              <div style={{
+                position: 'absolute',
+                top: `${1 + 2 * ([profile.verification_status === 'verified', profile.skill_review_status === 'approved'].filter(Boolean).length)}rem`,
+                right: '1rem', backgroundColor: '#f59e0b', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.25rem'
+              }}>
+                <Award size={14} /> {t('detail.attendance_score')} {profile.attendance_score}%
               </div>
             )}
             {isAffiliated && (

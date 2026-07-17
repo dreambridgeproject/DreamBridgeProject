@@ -24,6 +24,8 @@ const JobManagementPage: React.FC = () => {
   const [applications, setApplications] = useState<ExtendedApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'jobs' | 'applicants'>('jobs');
+  const [approvingAppId, setApprovingAppId] = useState<string | null>(null);
+  const [scheduledDate, setScheduledDate] = useState('');
 
   const fetchData = async () => {
     if (!user) return;
@@ -85,7 +87,7 @@ const JobManagementPage: React.FC = () => {
     fetchData();
   }, [user]);
 
-  const handleUpdateStatus = async (appId: string, status: 'approved' | 'rejected', talent: Profile) => {
+  const handleUpdateStatus = async (appId: string, status: 'approved' | 'rejected', talent: Profile, scheduledAt?: string) => {
     const { error } = await supabase
       .from('job_applications')
       .update({ status })
@@ -105,12 +107,15 @@ const JobManagementPage: React.FC = () => {
           sender_role: 'casting',
           mediator_id: isAffiliated ? talent.agency_id : null,
           status: 'approved',
+          scheduled_at: scheduledAt,
           message: t('job.manage_chat_welcome')
         });
         alert(t('job.manage_approve_success'));
       } else {
         alert(t('job.manage_reject_success'));
       }
+      setApprovingAppId(null);
+      setScheduledDate('');
       fetchData();
     }
   };
@@ -231,14 +236,43 @@ const JobManagementPage: React.FC = () => {
                     <User size={16} /> {t('job.manage_profile_btn')}
                   </button>
                   {app.status === 'pending' && (
-                    <>
-                      <button onClick={() => handleUpdateStatus(app.id, 'approved', app.talent)} className="btn btn-primary" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: '#10b981' }}>
-                        <Check size={16} /> {app.talent.affiliation_status === 'affiliated' ? t('job.manage_approve_btn_casting') : t('job.manage_approve_btn_free')}
-                      </button>
-                      <button onClick={() => handleUpdateStatus(app.id, 'rejected', app.talent)} className="btn" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
-                        <X size={16} /> {t('job.manage_reject_btn')}
-                      </button>
-                    </>
+                    approvingAppId === app.id ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1 }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('offer.schedule_prompt')}</span>
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <input
+                            type="datetime-local"
+                            value={scheduledDate}
+                            onChange={(e) => setScheduledDate(e.target.value)}
+                            style={{ flex: 1, padding: '0.4rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: '0.8rem' }}
+                          />
+                          <button
+                            onClick={() => scheduledDate && handleUpdateStatus(app.id, 'approved', app.talent, new Date(scheduledDate).toISOString())}
+                            disabled={!scheduledDate}
+                            className="btn btn-primary"
+                            style={{ fontSize: '0.875rem', backgroundColor: '#10b981', opacity: scheduledDate ? 1 : 0.6 }}
+                          >
+                            {t('offer.schedule_confirm')}
+                          </button>
+                          <button
+                            onClick={() => { setApprovingAppId(null); setScheduledDate(''); }}
+                            className="btn btn-outline"
+                            style={{ fontSize: '0.875rem' }}
+                          >
+                            {t('offer.schedule_cancel')}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <button onClick={() => setApprovingAppId(app.id)} className="btn btn-primary" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: '#10b981' }}>
+                          <Check size={16} /> {app.talent.affiliation_status === 'affiliated' ? t('job.manage_approve_btn_casting') : t('job.manage_approve_btn_free')}
+                        </button>
+                        <button onClick={() => handleUpdateStatus(app.id, 'rejected', app.talent)} className="btn" style={{ flex: 1, fontSize: '0.875rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+                          <X size={16} /> {t('job.manage_reject_btn')}
+                        </button>
+                      </>
+                    )
                   )}
                   {app.status === 'approved' && (
                     <button onClick={() => navigate('/chat')} className="btn btn-primary" style={{ flex: 1, fontSize: '0.875rem' }}>

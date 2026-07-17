@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
 import { logSearch } from '../lib/analytics';
-import { Search, MapPin, User, Users, Camera, ShieldCheck, Sparkles } from 'lucide-react';
+import { Search, MapPin, User, Users, Camera, ShieldCheck, Sparkles, Award } from 'lucide-react';
+import { shouldShowAttendanceScore } from '../lib/attendanceScore';
 import type { Profile } from '../types';
 
 interface SearchPageProps {
@@ -407,6 +408,11 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
                     {user.skill_review_status === 'approved' && (
                       <div style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.15rem 0.5rem', borderRadius: '2rem', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                         <Sparkles size={12} /> {t('detail.skill_verified')}
+                      </div>
+                    )}
+                    {shouldShowAttendanceScore(user) && (
+                      <div style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.15rem 0.5rem', borderRadius: '2rem', fontSize: '0.7rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                        <Award size={12} /> {t('detail.attendance_score')} {user.attendance_score}%
                       </div>
                     )}
                   </div>

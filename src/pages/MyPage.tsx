@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { shouldShowAttendanceScore } from '../lib/attendanceScore';
 import { 
   LogOut, Edit, MapPin, Search, Star, MessageSquare,
   Image, Shield, Briefcase, Users,
@@ -611,6 +612,11 @@ const MyPage: React.FC = () => {
                       {isTalent && currentUser?.skill_review_status === 'approved' && (
                         <span style={{ backgroundColor: '#3b82f622', color: '#3b82f6', padding: '0.25rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, border: '1px solid #3b82f644' }}>
                           {t('detail.skill_verified')}
+                        </span>
+                      )}
+                      {currentUser && shouldShowAttendanceScore(currentUser) && (
+                        <span style={{ backgroundColor: '#f59e0b22', color: '#f59e0b', padding: '0.25rem 0.75rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, border: '1px solid #f59e0b44' }}>
+                          {t('detail.attendance_score')} {currentUser.attendance_score}%
                         </span>
                       )}
                     </div>

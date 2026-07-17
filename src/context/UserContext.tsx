@@ -17,7 +17,7 @@ interface UserContextType {
   toggleLike: (id: string) => void;
   offers: Offer[];
   sendOffer: (receiverId: string, jobId?: string) => Promise<void>;
-  updateOfferStatus: (offerId: string, status: 'approved' | 'declined') => Promise<void>;
+  updateOfferStatus: (offerId: string, status: 'approved' | 'declined', scheduledAt?: string) => Promise<void>;
   messages: ChatMessage[];
   sendMessage: (offerId: string, text: string) => Promise<void>;
   notifications: Notification[];
@@ -382,13 +382,16 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     timestamp: o.timestamp,
     lastMessage: o.last_message,
     mediatorId: o.mediator_id,
-    jobId: o.job_id
+    jobId: o.job_id,
+    scheduledAt: o.scheduled_at
   });
 
-  const updateOfferStatus = async (offerId: string, status: 'approved' | 'declined') => {
-    const { error } = await supabase.from('offers').update({ status }).eq('id', offerId);
+  const updateOfferStatus = async (offerId: string, status: 'approved' | 'declined', scheduledAt?: string) => {
+    const updatePayload: { status: string; scheduled_at?: string } = { status };
+    if (status === 'approved' && scheduledAt) updatePayload.scheduled_at = scheduledAt;
+    const { error } = await supabase.from('offers').update(updatePayload).eq('id', offerId);
     if (!error) {
-      setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status } : o));
+      setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status, ...(scheduledAt ? { scheduledAt } : {}) } : o));
       logAction(user?.id, `offer_${status}`, offerId);
     }
   };

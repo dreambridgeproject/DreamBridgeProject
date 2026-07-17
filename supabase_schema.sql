@@ -398,3 +398,91 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER on_new_message
 AFTER INSERT ON public.messages
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_message_notification();
+
+-- 11. Attendance / No-show Trust Score
+-- Confirmed engagement date, recorded when an offer is approved (covers both
+-- scout offers and job-application approvals, since both end up as an
+-- 'approved' row in public.offers).
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMP WITH TIME ZONE;
+-- Set true by the daily survey-generation job once attendance_surveys rows
+-- exist for this offer, so the cron query is a plain indexed filter instead
+-- of a NOT EXISTS subquery.
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS survey_generated BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_offers_survey_pending ON public.offers(scheduled_at) WHERE status = 'approved' AND survey_generated = false;
+
+-- Trust score aggregates (kept denormalized on profiles so reads stay a
+-- simple flag/number lookup, matching verification_status/skill_review_status).
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS attendance_score NUMERIC;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS attendance_survey_count INTEGER NOT NULL DEFAULT 0;
+
+-- One row per party per confirmed offer (bidirectional: each side rates the other).
+-- Unanswered rows (response IS NULL) are excluded from scoring entirely --
+-- accuracy over track-record padding.
+CREATE TABLE IF NOT EXISTS public.attendance_surveys (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    offer_id UUID REFERENCES public.offers(id) ON DELETE CASCADE NOT NULL,
+    respondent_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL, -- asked to answer
+    subject_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,    -- being rated
+    token UUID DEFAULT gen_random_uuid() NOT NULL,
+    response TEXT CHECK (response IN ('attended', 'no_show')), -- NULL = not yet answered
+    responded_at TIMESTAMP WITH TIME ZONE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_surveys_token ON public.attendance_surveys(token);
+CREATE INDEX IF NOT EXISTS idx_attendance_surveys_offer ON public.attendance_surveys(offer_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_surveys_subject ON public.attendance_surveys(subject_id);
+
+ALTER TABLE public.attendance_surveys ENABLE ROW LEVEL SECURITY;
+
+-- Writes only ever happen through respond_to_attendance_survey() (SECURITY
+-- DEFINER below) or the service-role cron job that generates surveys --
+-- there is deliberately no INSERT/UPDATE policy here, same approach as
+-- notifications being written only via SECURITY DEFINER triggers.
+CREATE POLICY "Users can view surveys addressed to them" ON public.attendance_surveys FOR SELECT
+USING (auth.uid() = respondent_id);
+
+-- Records a survey response by token (works for both the anonymous one-click
+-- email link and a logged-in in-app tap -- token is the sole auth), then
+-- recalculates the subject's trust score from all answered surveys.
+CREATE OR REPLACE FUNCTION public.respond_to_attendance_survey(p_token UUID, p_response TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_subject_id UUID;
+BEGIN
+    IF p_response NOT IN ('attended', 'no_show') THEN
+        RETURN false;
+    END IF;
+
+    UPDATE public.attendance_surveys
+    SET response = p_response, responded_at = NOW()
+    WHERE token = p_token AND response IS NULL AND expires_at > NOW()
+    RETURNING subject_id INTO v_subject_id;
+
+    IF v_subject_id IS NULL THEN
+        RETURN false;
+    END IF;
+
+    UPDATE public.profiles SET
+        attendance_survey_count = (
+            SELECT COUNT(*) FROM public.attendance_surveys
+            WHERE subject_id = v_subject_id AND response IS NOT NULL
+        ),
+        attendance_score = (
+            SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE response = 'attended') / COUNT(*), 1)
+            FROM public.attendance_surveys
+            WHERE subject_id = v_subject_id AND response IS NOT NULL
+        )
+    WHERE id = v_subject_id;
+
+    RETURN true;
+END;
+$$;
+
+-- Must be callable by unauthenticated visitors following an email link.
+GRANT EXECUTE ON FUNCTION public.respond_to_attendance_survey(UUID, TEXT) TO anon, authenticated;

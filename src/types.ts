@@ -55,6 +55,8 @@ export interface Profile {
   past_works?: string;
   representative_name?: string;
   gender?: 'male' | 'female' | 'other' | 'none';
+  attendance_score?: number | null; // 0-100, based on answered attendance_surveys only
+  attendance_survey_count?: number; // number of answered surveys the score is based on
 }
 
 // Backward compatibility for existing components
@@ -95,6 +97,7 @@ export interface Offer {
   mediatorId?: string; // Agency ID for mediated offers
   jobId?: string; // Which job posting this scout is for, if any
   jobTitle?: string;
+  scheduledAt?: string; // Confirmed shoot/audition date, set on approval
 }
 
 export interface Invitation {

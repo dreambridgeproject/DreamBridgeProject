@@ -21,6 +21,7 @@ import PaymentSettingsPage from './pages/PaymentSettingsPage';
 import VerificationPage from './pages/VerificationPage';
 import AdminDashboard from './pages/AdminDashboard';
 import LegalPage from './pages/LegalPage';
+import AttendanceResponsePage from './pages/AttendanceResponsePage';
 import QuickAccessPopup from './components/QuickAccessPopup';
 import { type ReactNode } from 'react';
 
@@ -75,6 +76,7 @@ function App() {
                   </AdminRoute>
                 } />
                 <Route path="/legal" element={<LegalPage />} />
+                <Route path="/attendance-response" element={<AttendanceResponsePage />} />
               </Routes>
             </main>
             <QuickAccessPopup />
