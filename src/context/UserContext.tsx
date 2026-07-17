@@ -210,48 +210,6 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
               fetchOffers(session.user.id, userRole);
               fetchMessages(session.user.id);
               fetchNotifications(session.user.id);
-
-              // Subscribe to notifications
-              const channel = supabase
-                .channel(`user_notifications_${session.user.id}`)
-                .on(
-                  'postgres_changes',
-                  {
-                    event: '*',
-                    schema: 'public',
-                    table: 'notifications',
-                    filter: `user_id=eq.${session.user.id}`
-                  },
-                  (payload) => {
-                    console.log('Notification change received:', payload);
-                    if (payload.eventType === 'INSERT') {
-                      const n = payload.new as any;
-                      const newNotif: Notification = {
-                        id: n.id,
-                        userId: n.user_id,
-                        type: n.type,
-                        title: n.title,
-                        message: n.message,
-                        link: n.link,
-                        timestamp: n.timestamp,
-                        read: n.read
-                      };
-                      setNotifications(prev => [newNotif, ...prev]);
-                    } else if (payload.eventType === 'UPDATE') {
-                      setNotifications(prev => prev.map(n => n.id === payload.new.id ? {
-                        ...n,
-                        read: payload.new.read
-                      } : n));
-                    } else if (payload.eventType === 'DELETE') {
-                      setNotifications(prev => prev.filter(n => n.id !== payload.old.id));
-                    }
-                  }
-                )
-                .subscribe();
-
-              return () => {
-                supabase.removeChannel(channel);
-              };
             }
           } else {
             console.warn('Could not load user profile on auth state change (possibly due to database wakeup sleep). Retaining session without profile details.');
@@ -274,6 +232,55 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Realtime notification subscription, kept separate from onAuthStateChange:
+  // that callback re-fires on every auth event (token refresh, tab refocus),
+  // and re-subscribing a channel with the same topic each time throws
+  // "cannot add postgres_changes callbacks ... after subscribe()". Keying
+  // this effect on the user id means it subscribes exactly once per session.
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`user_notifications_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const n = payload.new as any;
+            const newNotif: Notification = {
+              id: n.id,
+              userId: n.user_id,
+              type: n.type,
+              title: n.title,
+              message: n.message,
+              link: n.link,
+              timestamp: n.timestamp,
+              read: n.read
+            };
+            setNotifications(prev => [newNotif, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setNotifications(prev => prev.map(n => n.id === payload.new.id ? {
+              ...n,
+              read: payload.new.read
+            } : n));
+          } else if (payload.eventType === 'DELETE') {
+            setNotifications(prev => prev.filter(n => n.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) {
