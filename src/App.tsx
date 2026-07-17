@@ -22,6 +22,7 @@ import VerificationPage from './pages/VerificationPage';
 import AdminDashboard from './pages/AdminDashboard';
 import LegalPage from './pages/LegalPage';
 import AttendanceResponsePage from './pages/AttendanceResponsePage';
+import JobDetailPage from './pages/JobDetailPage';
 import QuickAccessPopup from './components/QuickAccessPopup';
 import { type ReactNode } from 'react';
 
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/mypage" element={<MyPage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/jobs/manage" element={<JobManagementPage />} />
+                <Route path="/jobs/detail/:id" element={<JobDetailPage />} />
                 <Route path="/agency/talents" element={<AgencyTalentManagementPage />} />
                 <Route path="/jobs/applications" element={<JobApplicationsPage />} />
                 <Route path="/search/talent" element={<SearchPage type="talent" />} />

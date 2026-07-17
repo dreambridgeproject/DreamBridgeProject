@@ -194,7 +194,7 @@ const JobManagementPage: React.FC = () => {
                   <button onClick={() => handleToggleJobStatus(job.id, job.status)} className="btn btn-outline" style={{ fontSize: '0.75rem' }}>
                     {job.status === 'open' ? t('job.manage_stop_btn') : t('job.manage_restart_btn')}
                   </button>
-                  <button onClick={() => navigate(`/detail/casting/${job.id}`)} className="btn btn-surface" style={{ fontSize: '0.75rem' }}>
+                  <button onClick={() => navigate(`/jobs/detail/${job.id}`)} className="btn btn-surface" style={{ fontSize: '0.75rem' }}>
                     {t('job.manage_detail_btn')}
                   </button>
                 </div>
