@@ -387,7 +387,7 @@ const MyPage: React.FC = () => {
         )}
         {isCasting && (
           <button
-            onClick={() => navigate('/jobs')}
+            onClick={() => navigate('/jobs/manage')}
             style={{ ...quickLinkStyle, border: '1px solid var(--accent)', background: 'rgba(212, 175, 55, 0.1)' }}
           >
             <Briefcase size={24} color="var(--accent)" />
