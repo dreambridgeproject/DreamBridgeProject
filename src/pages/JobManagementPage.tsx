@@ -101,11 +101,13 @@ const JobManagementPage: React.FC = () => {
         // agency-affiliated, mediate through the agency (3-party chat),
         // matching the direct-scout flow in DetailPage.tsx.
         const isAffiliated = talent.affiliation_status === 'affiliated' && !!talent.agency_id;
+        const app = applications.find(a => a.id === appId);
         await supabase.from('offers').insert({
           sender_id: user?.id,
           receiver_id: talent.id,
           sender_role: 'casting',
           mediator_id: isAffiliated ? talent.agency_id : null,
+          job_id: app?.job_id,
           status: 'approved',
           scheduled_at: scheduledAt,
           message: t('job.manage_chat_welcome')
