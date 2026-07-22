@@ -24,6 +24,7 @@ const DetailPage: React.FC = () => {
   const [isLimitReached, setIsLimitReached] = useState(false);
   const [myJobs, setMyJobs] = useState<{ id: string; title: string }[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>('');
+  const [sendingOffer, setSendingOffer] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -106,41 +107,47 @@ const DetailPage: React.FC = () => {
       return;
     }
     if (!canSendOffer || isOfferBlockedByAgency) return;
-    if (existingOffer) return;
+    if (existingOffer || sendingOffer) return;
     if (isLimitReached) {
       alert(t('detail.limit_reached'));
       return;
     }
+    if (!window.confirm(t('offer.send_confirm'))) return;
 
-    if (isAffiliated) {
-      // Mediated offer
-      const newMediatedOffer: any = {
-        sender_id: currentUser.id,
-        receiver_id: profile.id,
-        sender_role: role || 'casting',
-        mediator_id: profile.agency_id,
-        job_id: selectedJobId || null,
-        status: 'pending',
-        timestamp: new Date().toISOString()
-      };
+    setSendingOffer(true);
+    try {
+      if (isAffiliated) {
+        // Mediated offer
+        const newMediatedOffer: any = {
+          sender_id: currentUser.id,
+          receiver_id: profile.id,
+          sender_role: role || 'casting',
+          mediator_id: profile.agency_id,
+          job_id: selectedJobId || null,
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        };
 
-      try {
-        await (robustInsertOffer as any)(newMediatedOffer);
-        alert(t('offer.send_success'));
-        const reached = await checkOfferLimit();
-        setIsLimitReached(reached);
-      } catch (err: any) {
-        alert(t('offer.send_fail') + (err.message ? ': ' + err.message : ''));
+        try {
+          await (robustInsertOffer as any)(newMediatedOffer);
+          alert(t('offer.send_success'));
+          const reached = await checkOfferLimit();
+          setIsLimitReached(reached);
+        } catch (err: any) {
+          alert(t('offer.send_fail') + (err.message ? ': ' + err.message : ''));
+        }
+      } else {
+        try {
+          await sendOffer(profile.id, selectedJobId || undefined);
+          alert(t('offer.send_success'));
+          const reached = await checkOfferLimit();
+          setIsLimitReached(reached);
+        } catch (err: any) {
+          alert(t('offer.send_fail'));
+        }
       }
-    } else {
-      try {
-        await sendOffer(profile.id, selectedJobId || undefined);
-        alert(t('offer.send_success'));
-        const reached = await checkOfferLimit();
-        setIsLimitReached(reached);
-      } catch (err: any) {
-        alert(t('offer.send_fail'));
-      }
+    } finally {
+      setSendingOffer(false);
     }
   };
 
@@ -219,13 +226,13 @@ const DetailPage: React.FC = () => {
               <Heart size={24} fill={isLiked ? 'currentColor' : 'none'} />
             </button>
             <div style={{ flex: 3, position: 'relative' }}>
-              <button 
+              <button
                 onClick={handleOffer}
-                disabled={!!existingOffer || !canSendOffer || isLimitReached || isOfferBlockedByAgency}
-                className="btn btn-primary" 
-                style={{ width: '100%', padding: '1rem', opacity: (existingOffer || !canSendOffer || isLimitReached || isOfferBlockedByAgency) ? 0.6 : 1 }}
+                disabled={!!existingOffer || !canSendOffer || isLimitReached || isOfferBlockedByAgency || sendingOffer}
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '1rem', opacity: (existingOffer || !canSendOffer || isLimitReached || isOfferBlockedByAgency || sendingOffer) ? 0.6 : 1 }}
               >
-                {!canSendOffer && <Lock size={20} />} 
+                {!canSendOffer && <Lock size={20} />}
                 {existingOffer ? t('detail.offered') : isLimitReached ? t('detail.limit_reached_btn') : isOfferBlockedByAgency ? t('detail.offer_stopped') : isAffiliated ? t('detail.offer_via_agency') : t('detail.send_offer')}
               </button>
               {(!canSendOffer || isLimitReached || isOfferBlockedByAgency) && (

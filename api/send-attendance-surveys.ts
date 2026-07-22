@@ -2,9 +2,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 // Runs on a daily Vercel Cron schedule (see vercel.json). For every approved
-// offer whose scheduled_at has passed (with a 1-day buffer), creates the two
-// attendance_surveys rows (bidirectional), a matching in-app notification,
-// and emails each respondent a one-click "did they show up?" link.
+// AND mutually deal-confirmed offer whose scheduled_at has passed (with a
+// 1-day buffer), creates the two attendance_surveys rows (bidirectional), a
+// matching in-app notification, and emails each respondent a one-click "did
+// they show up?" link. deal_confirmed_at IS NOT NULL excludes chats that got
+// superseded (e.g. talent approved into several chats but only confirmed
+// one) -- see confirm_deal() in supabase_schema.sql section 13.
 //
 // Uses the Supabase service role key (server-only env var) so it can bypass
 // RLS -- attendance_surveys otherwise has no INSERT policy at all, by design.
@@ -38,6 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .select('id, sender_id, receiver_id')
     .eq('status', 'approved')
     .eq('survey_generated', false)
+    .not('deal_confirmed_at', 'is', null)
     .lt('scheduled_at', cutoff);
 
   if (fetchError) {

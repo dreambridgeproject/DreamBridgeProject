@@ -99,6 +99,8 @@ export interface Offer {
   jobTitle?: string;
   scheduledAt?: string; // Confirmed shoot/audition date, set on approval
   hiddenBy?: string[]; // User IDs who have hidden this chat from their own view
+  dealConfirmedBy?: string[]; // sender_id/receiver_id who have confirmed the job is really happening
+  dealConfirmedAt?: string; // Set once both sender_id and receiver_id have confirmed
 }
 
 export interface Invitation {

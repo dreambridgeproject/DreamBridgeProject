@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Send, ChevronLeft, MoreVertical, ClipboardList, MessageSquare, AlertTriangle, ShieldAlert, Trash2 } from 'lucide-react';
+import { Send, ChevronLeft, MoreVertical, ClipboardList, MessageSquare, AlertTriangle, ShieldAlert, Trash2, CheckCircle2 } from 'lucide-react';
 import OffersPage from './OffersPage';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types';
 
 const ChatPage: React.FC = () => {
   const { offerId } = useParams<{ offerId?: string }>();
-  const { currentUser, offers, messages, sendMessage, markMessagesAsRead, hideChat } = useUser();
+  const { currentUser, offers, messages, sendMessage, markMessagesAsRead, hideChat, confirmDeal } = useUser();
   const { t } = useLanguage();
   const [inputText, setInputText] = useState('');
   const [activeTab, setActiveTab] = useState<'chats' | 'offers'>('chats');
@@ -18,6 +18,7 @@ const ChatPage: React.FC = () => {
   const [reportDesc, setReportDesc] = useState('');
   const [isReporting, setIsReporting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isConfirmingDeal, setIsConfirmingDeal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll chat to bottom and Mark as Read
@@ -131,6 +132,15 @@ const ChatPage: React.FC = () => {
     if (window.confirm(t('chat.delete_confirm'))) {
       hideChat(offerIdToDelete);
     }
+  };
+
+  const handleConfirmDeal = async () => {
+    if (!offerId || isConfirmingDeal) return;
+    if (!window.confirm(t('chat.deal_confirm_prompt'))) return;
+    setIsConfirmingDeal(true);
+    const ok = await confirmDeal(offerId);
+    setIsConfirmingDeal(false);
+    if (!ok) alert(t('chat.deal_confirm_fail'));
   };
 
   // If no offerId, show chat list (LINE-like) with tabs
@@ -342,6 +352,39 @@ const ChatPage: React.FC = () => {
           )}
         </div>
       </header>
+
+      {/* Deal Confirmation Banner (job-tied chats only) */}
+      {currentOffer.jobId && (() => {
+        const isParty = currentUser.id === currentOffer.senderId || currentUser.id === currentOffer.receiverId;
+        const iHaveConfirmed = !!currentOffer.dealConfirmedBy?.includes(currentUser.id);
+        const bothConfirmed = !!currentOffer.dealConfirmedAt;
+
+        return (
+          <div style={{
+            padding: '0.6rem 1rem',
+            backgroundColor: bothConfirmed ? 'rgba(16, 185, 129, 0.1)' : 'var(--surface)',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
+          }}>
+            <span style={{ fontSize: '0.8125rem', color: bothConfirmed ? '#10b981' : 'var(--text-muted)', fontWeight: bothConfirmed ? 700 : 400, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              {bothConfirmed ? <><CheckCircle2 size={16} /> {t('chat.deal_confirmed_both')}</> : (isParty && iHaveConfirmed ? t('chat.deal_confirmed_waiting') : t('chat.deal_not_confirmed'))}
+            </span>
+            {isParty && !bothConfirmed && !iHaveConfirmed && (
+              <button
+                onClick={handleConfirmDeal}
+                disabled={isConfirmingDeal}
+                className="btn btn-primary"
+                style={{ padding: '0.4rem 0.9rem', fontSize: '0.8125rem', opacity: isConfirmingDeal ? 0.6 : 1, whiteSpace: 'nowrap' }}
+              >
+                {t('chat.deal_confirm_btn')}
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Messages Area */}
       <div 

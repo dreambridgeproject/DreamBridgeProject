@@ -19,6 +19,7 @@ interface UserContextType {
   sendOffer: (receiverId: string, jobId?: string) => Promise<void>;
   updateOfferStatus: (offerId: string, status: 'approved' | 'declined', scheduledAt?: string) => Promise<void>;
   hideChat: (offerId: string) => Promise<void>;
+  confirmDeal: (offerId: string) => Promise<boolean>;
   messages: ChatMessage[];
   sendMessage: (offerId: string, text: string) => Promise<void>;
   notifications: Notification[];
@@ -393,7 +394,9 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     mediatorId: o.mediator_id,
     jobId: o.job_id,
     scheduledAt: o.scheduled_at,
-    hiddenBy: o.hidden_by || []
+    hiddenBy: o.hidden_by || [],
+    dealConfirmedBy: o.deal_confirmed_by || [],
+    dealConfirmedAt: o.deal_confirmed_at
   });
 
   const updateOfferStatus = async (offerId: string, status: 'approved' | 'declined', scheduledAt?: string) => {
@@ -412,6 +415,24 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!error) {
       setOffers(prev => prev.map(o => o.id === offerId ? { ...o, hiddenBy: [...(o.hiddenBy || []), user.id] } : o));
     }
+  };
+
+  const confirmDeal = async (offerId: string) => {
+    if (!user) return false;
+    const { data, error } = await supabase.rpc('confirm_deal', { p_offer_id: offerId });
+    if (error || !data) return false;
+
+    setOffers(prev => prev.map(o => {
+      if (o.id !== offerId) return o;
+      const dealConfirmedBy = [...(o.dealConfirmedBy || []), user.id];
+      const bothConfirmed = dealConfirmedBy.includes(o.senderId) && dealConfirmedBy.includes(o.receiverId);
+      return {
+        ...o,
+        dealConfirmedBy,
+        dealConfirmedAt: bothConfirmed ? (o.dealConfirmedAt || new Date().toISOString()) : o.dealConfirmedAt
+      };
+    }));
+    return true;
   };
 
   const sendMessage = async (offerId: string, text: string) => {
@@ -510,7 +531,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <UserContext.Provider value={{ 
       currentUser, role, user, loading, profileLoading, login, logout, updateProfile,
-      likes, toggleLike, offers, sendOffer, updateOfferStatus, hideChat,
+      likes, toggleLike, offers, sendOffer, updateOfferStatus, hideChat, confirmDeal,
       messages, sendMessage, notifications, markNotificationAsRead, clearNotifications,
       checkOfferLimit, markMessagesAsRead, robustInsertOffer
     }}>

@@ -516,3 +516,60 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.hide_chat(UUID) TO authenticated;
+
+-- 13. Deal Confirmation ("案件成立")
+-- offers.status = 'approved' only means the casting/agency side picked this
+-- candidate and a chat was opened -- it says nothing about whether the job
+-- actually got locked in. A talent can be 'approved' into several chats at
+-- once and only really go with one of them, so approved alone isn't a safe
+-- signal to feed the no-show survey below. This adds an explicit, mutual
+-- confirmation step: both actual negotiating parties (sender_id and
+-- receiver_id -- NOT the mediator, who isn't the one doing the job) must
+-- independently confirm before a chat counts as a real, finalized job.
+-- Scoped to job-tied chats only (job_id IS NOT NULL); job-less scouting
+-- chats (e.g. an agency courting a talent for representation) have no
+-- shoot date or attendance concept, so this doesn't apply to them.
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS deal_confirmed_by UUID[] NOT NULL DEFAULT '{}';
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS deal_confirmed_at TIMESTAMP WITH TIME ZONE;
+
+CREATE OR REPLACE FUNCTION public.confirm_deal(p_offer_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_sender_id UUID;
+    v_receiver_id UUID;
+    v_confirmed_by UUID[];
+BEGIN
+    UPDATE public.offers
+    SET deal_confirmed_by = array_append(deal_confirmed_by, auth.uid())
+    WHERE id = p_offer_id
+      AND status = 'approved'
+      AND job_id IS NOT NULL
+      AND (auth.uid() = sender_id OR auth.uid() = receiver_id)
+      AND NOT (auth.uid() = ANY(deal_confirmed_by))
+    RETURNING sender_id, receiver_id, deal_confirmed_by INTO v_sender_id, v_receiver_id, v_confirmed_by;
+
+    IF NOT FOUND THEN
+        RETURN false;
+    END IF;
+
+    IF v_sender_id = ANY(v_confirmed_by) AND v_receiver_id = ANY(v_confirmed_by) THEN
+        UPDATE public.offers SET deal_confirmed_at = NOW() WHERE id = p_offer_id AND deal_confirmed_at IS NULL;
+    END IF;
+
+    RETURN true;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.confirm_deal(UUID) TO authenticated;
+
+-- Re-scope the no-show survey pipeline to confirmed deals only, so chats
+-- that got superseded (talent went with a different offer and never
+-- confirmed this one) never get surveyed and never wrongly ding anyone's
+-- attendance_score. Replaces the index from section 11.
+DROP INDEX IF EXISTS idx_offers_survey_pending;
+CREATE INDEX IF NOT EXISTS idx_offers_survey_pending ON public.offers(scheduled_at)
+    WHERE status = 'approved' AND survey_generated = false AND deal_confirmed_at IS NOT NULL;
