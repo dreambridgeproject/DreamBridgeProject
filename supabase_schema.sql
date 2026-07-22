@@ -486,3 +486,33 @@ $$;
 
 -- Must be callable by unauthenticated visitors following an email link.
 GRANT EXECUTE ON FUNCTION public.respond_to_attendance_survey(UUID, TEXT) TO anon, authenticated;
+
+-- 12. Per-user chat hiding ("delete chat" in the UI)
+-- Hiding is local to the user who deletes it -- the other party (and any
+-- mediator) still sees the thread, and messages/attendance_surveys tied to
+-- the offer are untouched, since they're evidence for trust & safety and
+-- the no-show scoring pipeline.
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS hidden_by UUID[] NOT NULL DEFAULT '{}';
+
+-- SECURITY DEFINER so hiding doesn't depend on whatever UPDATE policy offers
+-- has in prod (that policy isn't tracked in this file -- see notification
+-- bug debug notes on schema drift). Only lets a caller add themselves, and
+-- only if they're actually a party to the offer.
+CREATE OR REPLACE FUNCTION public.hide_chat(p_offer_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    UPDATE public.offers
+    SET hidden_by = array_append(hidden_by, auth.uid())
+    WHERE id = p_offer_id
+      AND (auth.uid() = sender_id OR auth.uid() = receiver_id OR auth.uid() = mediator_id)
+      AND NOT (auth.uid() = ANY(hidden_by));
+
+    RETURN FOUND;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.hide_chat(UUID) TO authenticated;

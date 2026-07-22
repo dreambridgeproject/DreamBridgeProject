@@ -98,6 +98,7 @@ export interface Offer {
   jobId?: string; // Which job posting this scout is for, if any
   jobTitle?: string;
   scheduledAt?: string; // Confirmed shoot/audition date, set on approval
+  hiddenBy?: string[]; // User IDs who have hidden this chat from their own view
 }
 
 export interface Invitation {

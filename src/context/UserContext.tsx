@@ -18,6 +18,7 @@ interface UserContextType {
   offers: Offer[];
   sendOffer: (receiverId: string, jobId?: string) => Promise<void>;
   updateOfferStatus: (offerId: string, status: 'approved' | 'declined', scheduledAt?: string) => Promise<void>;
+  hideChat: (offerId: string) => Promise<void>;
   messages: ChatMessage[];
   sendMessage: (offerId: string, text: string) => Promise<void>;
   notifications: Notification[];
@@ -89,7 +90,8 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
         lastMessage: o.last_message,
         mediatorId: o.mediator_id,
         jobId: o.job_id,
-        jobTitle: o.job?.title
+        jobTitle: o.job?.title,
+        hiddenBy: o.hidden_by || []
       })));
     }
   };
@@ -390,7 +392,8 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     lastMessage: o.last_message,
     mediatorId: o.mediator_id,
     jobId: o.job_id,
-    scheduledAt: o.scheduled_at
+    scheduledAt: o.scheduled_at,
+    hiddenBy: o.hidden_by || []
   });
 
   const updateOfferStatus = async (offerId: string, status: 'approved' | 'declined', scheduledAt?: string) => {
@@ -400,6 +403,14 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!error) {
       setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status, ...(scheduledAt ? { scheduledAt } : {}) } : o));
       logAction(user?.id, `offer_${status}`, offerId);
+    }
+  };
+
+  const hideChat = async (offerId: string) => {
+    if (!user) return;
+    const { error } = await supabase.rpc('hide_chat', { p_offer_id: offerId });
+    if (!error) {
+      setOffers(prev => prev.map(o => o.id === offerId ? { ...o, hiddenBy: [...(o.hiddenBy || []), user.id] } : o));
     }
   };
 
@@ -499,7 +510,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <UserContext.Provider value={{ 
       currentUser, role, user, loading, profileLoading, login, logout, updateProfile,
-      likes, toggleLike, offers, sendOffer, updateOfferStatus,
+      likes, toggleLike, offers, sendOffer, updateOfferStatus, hideChat,
       messages, sendMessage, notifications, markNotificationAsRead, clearNotifications,
       checkOfferLimit, markMessagesAsRead, robustInsertOffer
     }}>

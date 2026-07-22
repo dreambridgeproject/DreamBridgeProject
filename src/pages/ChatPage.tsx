@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Send, ChevronLeft, MoreVertical, ClipboardList, MessageSquare, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Send, ChevronLeft, MoreVertical, ClipboardList, MessageSquare, AlertTriangle, ShieldAlert, Trash2 } from 'lucide-react';
 import OffersPage from './OffersPage';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types';
 
 const ChatPage: React.FC = () => {
   const { offerId } = useParams<{ offerId?: string }>();
-  const { currentUser, offers, messages, sendMessage, markMessagesAsRead } = useUser();
+  const { currentUser, offers, messages, sendMessage, markMessagesAsRead, hideChat } = useUser();
   const { t } = useLanguage();
   const [inputText, setInputText] = useState('');
   const [activeTab, setActiveTab] = useState<'chats' | 'offers'>('chats');
@@ -125,9 +125,17 @@ const ChatPage: React.FC = () => {
     setInputText('');
   };
 
+  const handleDeleteChat = (e: React.MouseEvent, offerIdToDelete: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (window.confirm(t('chat.delete_confirm'))) {
+      hideChat(offerIdToDelete);
+    }
+  };
+
   // If no offerId, show chat list (LINE-like) with tabs
   if (!offerId) {
-    const approvedOffers = offers.filter(o => o.status === 'approved');
+    const approvedOffers = offers.filter(o => o.status === 'approved' && !o.hiddenBy?.includes(currentUser.id));
 
     return (
       <div className="container" style={{ padding: '1rem 0' }}>
@@ -234,6 +242,20 @@ const ChatPage: React.FC = () => {
                         )}
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => handleDeleteChat(e, offer.id)}
+                      title={t('chat.delete_btn')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        flexShrink: 0
+                      }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </Link>
                 );
               }) : (
