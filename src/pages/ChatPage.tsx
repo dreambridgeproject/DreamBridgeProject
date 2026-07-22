@@ -281,6 +281,7 @@ const ChatPage: React.FC = () => {
   }
 
   // Talk screen
+  if (!currentOffer) return <div className="container" style={{ color: 'var(--text-main)' }}>{t('chat.not_found')}</div>;
   const { partner, isPartnerTalent, isMediated, casting, talent, agency }: any = getPartnerInfo(currentOffer);
   if (!partner) return <div className="container" style={{ color: 'var(--text-main)' }}>{t('chat.not_found')}</div>;
 
