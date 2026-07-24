@@ -573,3 +573,35 @@ GRANT EXECUTE ON FUNCTION public.confirm_deal(UUID) TO authenticated;
 DROP INDEX IF EXISTS idx_offers_survey_pending;
 CREATE INDEX IF NOT EXISTS idx_offers_survey_pending ON public.offers(scheduled_at)
     WHERE status = 'approved' AND survey_generated = false AND deal_confirmed_at IS NOT NULL;
+
+-- 14. Per-casting job-application hiding ("delete applicant" in the UI)
+-- Only the casting company that owns the job sees this list, so unlike
+-- offers.hidden_by (both parties, needs an array) a single flag is enough.
+-- Hiding never touches job_applications.status -- the underlying
+-- approval/rejection record (and any offer/chat/attendance data it led to)
+-- is untouched, this just removes the row from the casting company's view.
+ALTER TABLE public.job_applications ADD COLUMN IF NOT EXISTS hidden_by_casting BOOLEAN NOT NULL DEFAULT false;
+
+-- SECURITY DEFINER so hiding doesn't depend on whatever UPDATE policy
+-- job_applications has in prod (see notification bug debug notes on schema
+-- drift). Only lets the owning casting company hide their own job's
+-- applications.
+CREATE OR REPLACE FUNCTION public.hide_job_application(p_application_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    UPDATE public.job_applications ja
+    SET hidden_by_casting = true
+    FROM public.jobs j
+    WHERE ja.id = p_application_id
+      AND ja.job_id = j.id
+      AND j.casting_id = auth.uid();
+
+    RETURN FOUND;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.hide_job_application(UUID) TO authenticated;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useUser } from '../context/UserContext';
-import { User, Check, X, MessageSquare } from 'lucide-react';
+import { User, Check, X, MessageSquare, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Job, Profile } from '../types';
 
@@ -12,6 +12,7 @@ interface ExtendedApplication {
   talent_id: string;
   status: 'pending' | 'approved' | 'rejected';
   applied_at: string;
+  hidden_by_casting?: boolean;
   talent: Profile;
   job: Job;
 }
@@ -26,6 +27,7 @@ const JobManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'jobs' | 'applicants'>('jobs');
   const [approvingAppId, setApprovingAppId] = useState<string | null>(null);
   const [scheduledDate, setScheduledDate] = useState('');
+  const [deletingAppId, setDeletingAppId] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -68,7 +70,7 @@ const JobManagementPage: React.FC = () => {
     if (appsData && jobsData) {
       const myJobIds = jobsData.map((j: any) => j.id);
       const filteredApps = appsData
-        .filter((app: any) => myJobIds.includes(app.job_id))
+        .filter((app: any) => myJobIds.includes(app.job_id) && !app.hidden_by_casting)
         .map((app: any) => ({
           ...app,
           job: {
@@ -120,6 +122,19 @@ const JobManagementPage: React.FC = () => {
       setScheduledDate('');
       fetchData();
     }
+  };
+
+  const handleDeleteApplicant = (appId: string) => {
+    setDeletingAppId(appId);
+  };
+
+  const confirmDeleteApplicant = async () => {
+    if (!deletingAppId) return;
+    const { error } = await supabase.rpc('hide_job_application', { p_application_id: deletingAppId });
+    if (!error) {
+      setApplications(prev => prev.filter(a => a.id !== deletingAppId));
+    }
+    setDeletingAppId(null);
   };
 
   const handleToggleJobStatus = async (jobId: string, currentStatus: string) => {
@@ -281,10 +296,33 @@ const JobManagementPage: React.FC = () => {
                       <MessageSquare size={16} /> {t('job.manage_chat_btn')}
                     </button>
                   )}
+                  <button
+                    onClick={() => handleDeleteApplicant(app.id)}
+                    title={t('job.manage_delete_btn')}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.5rem', flexShrink: 0 }}
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {deletingAppId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
+          <div style={{ backgroundColor: 'var(--surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '400px' }}>
+            <p style={{ marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('job.manage_delete_confirm')}</p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={confirmDeleteApplicant} className="btn btn-primary" style={{ flex: 1, backgroundColor: '#ef4444' }}>
+                {t('job.manage_delete_btn')}
+              </button>
+              <button onClick={() => setDeletingAppId(null)} className="btn btn-outline" style={{ flex: 1 }}>
+                {t('mypage.cancel')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

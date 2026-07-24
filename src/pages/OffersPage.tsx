@@ -2,17 +2,23 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
-import { CheckCircle2, XCircle, Clock, MessageCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, MessageCircle, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types';
 
 const OffersPage: React.FC = () => {
-  const { currentUser, offers, updateOfferStatus, role } = useUser();
+  const { currentUser, offers, updateOfferStatus, hideChat, role } = useUser();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [partnerProfiles, setPartnerProfiles] = useState<Record<string, Profile>>({});
   const [approvingOfferId, setApprovingOfferId] = useState<string | null>(null);
   const [scheduledDate, setScheduledDate] = useState('');
+  const [deletingOfferId, setDeletingOfferId] = useState<string | null>(null);
+
+  const confirmDeleteOffer = () => {
+    if (deletingOfferId) hideChat(deletingOfferId);
+    setDeletingOfferId(null);
+  };
 
   const confirmApproval = (offerId: string) => {
     if (!scheduledDate) return;
@@ -38,8 +44,12 @@ const OffersPage: React.FC = () => {
 
   if (!currentUser) return null;
 
-  const sentOffers = offers.filter(o => o.senderId === currentUser.id);
-  const receivedOffers = offers.filter(o => o.receiverId === currentUser.id);
+  // Approved offers move on to the chat list, so they're dropped here to
+  // avoid showing the same offer in two places. Manually hidden (declined)
+  // offers are also excluded.
+  const isVisibleInHistory = (o: any) => o.status !== 'approved' && !o.hiddenBy?.includes(currentUser.id);
+  const sentOffers = offers.filter(o => o.senderId === currentUser.id && isVisibleInHistory(o));
+  const receivedOffers = offers.filter(o => o.receiverId === currentUser.id && isVisibleInHistory(o));
 
   const getPartnerInfo = (offer: any) => {
     const partnerId = offer.senderId === currentUser.id ? offer.receiverId : offer.senderId;
@@ -146,13 +156,22 @@ const OffersPage: React.FC = () => {
               </>
             )
           ) : (
-            <Link 
-              to={offer.status === 'approved' ? `/chat/${offer.id}` : `/detail/${isPartnerTalent ? 'talent' : 'agency'}/${partner.id}`} 
-              className="btn btn-outline" 
+            <Link
+              to={offer.status === 'approved' ? `/chat/${offer.id}` : `/detail/${isPartnerTalent ? 'talent' : 'agency'}/${partner.id}`}
+              className="btn btn-outline"
               style={{ padding: '0.5rem 1rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
             >
               {offer.status === 'approved' ? <><MessageCircle size={18} /> {t('chat.talk_tab')}</> : t('fav.view_detail')}
             </Link>
+          )}
+          {offer.status === 'declined' && (
+            <button
+              onClick={() => setDeletingOfferId(offer.id)}
+              title={t('chat.delete_btn')}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.5rem', flexShrink: 0 }}
+            >
+              <Trash2 size={18} />
+            </button>
           )}
         </div>
       </div>
@@ -205,6 +224,22 @@ const OffersPage: React.FC = () => {
           sentOffers.length > 0 ? sentOffers.map(renderOfferCard) : <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>{t('offer.no_sent_offers')}</div>
         )}
       </div>
+
+      {deletingOfferId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
+          <div style={{ backgroundColor: 'var(--surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '400px' }}>
+            <p style={{ marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('offer.delete_confirm')}</p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={confirmDeleteOffer} className="btn btn-primary" style={{ flex: 1, backgroundColor: '#ef4444' }}>
+                {t('chat.delete_btn')}
+              </button>
+              <button onClick={() => setDeletingOfferId(null)} className="btn btn-outline" style={{ flex: 1 }}>
+                {t('mypage.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
