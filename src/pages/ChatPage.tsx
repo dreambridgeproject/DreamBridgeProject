@@ -19,6 +19,7 @@ const ChatPage: React.FC = () => {
   const [isReporting, setIsReporting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isConfirmingDeal, setIsConfirmingDeal] = useState(false);
+  const [deletingOfferId, setDeletingOfferId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll chat to bottom and Mark as Read
@@ -129,9 +130,12 @@ const ChatPage: React.FC = () => {
   const handleDeleteChat = (e: React.MouseEvent, offerIdToDelete: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (window.confirm(t('chat.delete_confirm'))) {
-      hideChat(offerIdToDelete);
-    }
+    setDeletingOfferId(offerIdToDelete);
+  };
+
+  const confirmDeleteChat = () => {
+    if (deletingOfferId) hideChat(deletingOfferId);
+    setDeletingOfferId(null);
   };
 
   const handleConfirmDeal = async () => {
@@ -276,6 +280,22 @@ const ChatPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {deletingOfferId && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
+            <div style={{ backgroundColor: 'var(--surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '400px' }}>
+              <p style={{ marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('chat.delete_confirm')}</p>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button onClick={confirmDeleteChat} className="btn btn-primary" style={{ flex: 1, backgroundColor: '#ef4444' }}>
+                  {t('chat.delete_btn')}
+                </button>
+                <button onClick={() => setDeletingOfferId(null)} className="btn btn-outline" style={{ flex: 1 }}>
+                  {t('mypage.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
