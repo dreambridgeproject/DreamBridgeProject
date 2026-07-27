@@ -172,6 +172,8 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.offers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
 
 -- Enable Realtime for notifications
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
@@ -263,6 +265,21 @@ USING (EXISTS (
 -- Notifications: Only owner can view/edit
 CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
+
+-- Jobs: public listings are visible to everyone; only the owning casting company can manage their own
+CREATE POLICY "Allow public read jobs" ON public.jobs FOR SELECT USING (is_public = true);
+CREATE POLICY "Allow casting to manage own jobs" ON public.jobs FOR ALL USING (auth.uid() = casting_id);
+
+-- Job Applications: talent applies to their own; the talent and the owning casting company can view;
+-- only the owning casting company can update status (approve/reject)
+CREATE POLICY "Allow talent to apply" ON public.job_applications FOR INSERT WITH CHECK (auth.uid() = talent_id);
+CREATE POLICY "Allow users to see relevant applications" ON public.job_applications FOR SELECT USING (
+    auth.uid() = talent_id
+    OR EXISTS (SELECT 1 FROM public.jobs WHERE jobs.id = job_applications.job_id AND jobs.casting_id = auth.uid())
+);
+CREATE POLICY "Allow casting to update applications for own jobs" ON public.job_applications FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM public.jobs WHERE jobs.id = job_applications.job_id AND jobs.casting_id = auth.uid())
+);
 
 -- TRIGGERS FOR NOTIFICATIONS
 
