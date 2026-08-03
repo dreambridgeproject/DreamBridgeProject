@@ -213,15 +213,13 @@ WITH CHECK (
     AND (storage.foldername(name))[1] = auth.uid()::text
 );
 
-CREATE POLICY "Users can view own verification docs" ON storage.objects FOR SELECT 
+CREATE POLICY "Users can view own verification docs" ON storage.objects FOR SELECT
 USING (
-    bucket_id = 'verification-docs' 
+    bucket_id = 'verification-docs'
     AND (
-        (storage.foldername(name))[1] = auth.uid()::text 
-        OR EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE id = auth.uid() AND role = 'admin'
-        )
+        (storage.foldername(name))[1] = auth.uid()::text
+        OR (auth.jwt() ->> 'email') = 'admin@dreambridge.jp'
+        OR (auth.jwt() ->> 'email') LIKE '%admin@%'
     )
 );
 

@@ -29,15 +29,35 @@ import { type ReactNode } from 'react';
 // Admin Route Protection
 const AdminRoute = ({ children }: { children: ReactNode }) => {
   const { user, loading } = useUser();
-  
+
   if (loading) return null;
-  
+
   const isAdmin = user?.email === 'admin@dreambridge.jp' || user?.email?.includes('admin@');
-  
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
-  
+
+  return <>{children}</>;
+};
+
+// Requires a logged-in, admin-approved (verification_status === 'verified') user.
+// Guests are sent to the landing page instead of seeing empty search results /
+// app content; logged-in but not-yet-approved users are sent to the existing
+// /verification page, which already renders the right state (form, pending, or done).
+const RequireApproved = ({ children }: { children: ReactNode }) => {
+  const { user, currentUser, loading, profileLoading } = useUser();
+
+  if (loading || profileLoading) return null;
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (currentUser?.verification_status !== 'verified') {
+    return <Navigate to="/verification" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -54,23 +74,23 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/signup/:type" element={<SignupPage />} />
-                <Route path="/mypage" element={<MyPage />} />
-                <Route path="/jobs" element={<JobsPage />} />
-                <Route path="/jobs/manage" element={<JobManagementPage />} />
-                <Route path="/jobs/detail/:id" element={<JobDetailPage />} />
-                <Route path="/agency/talents" element={<AgencyTalentManagementPage />} />
-                <Route path="/jobs/applications" element={<JobApplicationsPage />} />
-                <Route path="/search/talent" element={<SearchPage type="talent" />} />
-                <Route path="/search/agencies" element={<SearchPage type="agency" />} />
-                <Route path="/search/casting" element={<SearchPage type="casting" />} />
-                <Route path="/detail/:type/:id" element={<DetailPage />} />
-                <Route path="/offers" element={<OffersPage />} />
-                <Route path="/chat" element={<ChatPage />} />
-                <Route path="/chat/:offerId" element={<ChatPage />} />
-                <Route path="/favorites" element={<FavoritesPage />} />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/subscription" element={<SubscriptionPage />} />
-                <Route path="/payment-settings" element={<PaymentSettingsPage />} />
+                <Route path="/mypage" element={<RequireApproved><MyPage /></RequireApproved>} />
+                <Route path="/jobs" element={<RequireApproved><JobsPage /></RequireApproved>} />
+                <Route path="/jobs/manage" element={<RequireApproved><JobManagementPage /></RequireApproved>} />
+                <Route path="/jobs/detail/:id" element={<RequireApproved><JobDetailPage /></RequireApproved>} />
+                <Route path="/agency/talents" element={<RequireApproved><AgencyTalentManagementPage /></RequireApproved>} />
+                <Route path="/jobs/applications" element={<RequireApproved><JobApplicationsPage /></RequireApproved>} />
+                <Route path="/search/talent" element={<RequireApproved><SearchPage type="talent" /></RequireApproved>} />
+                <Route path="/search/agencies" element={<RequireApproved><SearchPage type="agency" /></RequireApproved>} />
+                <Route path="/search/casting" element={<RequireApproved><SearchPage type="casting" /></RequireApproved>} />
+                <Route path="/detail/:type/:id" element={<RequireApproved><DetailPage /></RequireApproved>} />
+                <Route path="/offers" element={<RequireApproved><OffersPage /></RequireApproved>} />
+                <Route path="/chat" element={<RequireApproved><ChatPage /></RequireApproved>} />
+                <Route path="/chat/:offerId" element={<RequireApproved><ChatPage /></RequireApproved>} />
+                <Route path="/favorites" element={<RequireApproved><FavoritesPage /></RequireApproved>} />
+                <Route path="/notifications" element={<RequireApproved><NotificationsPage /></RequireApproved>} />
+                <Route path="/subscription" element={<RequireApproved><SubscriptionPage /></RequireApproved>} />
+                <Route path="/payment-settings" element={<RequireApproved><PaymentSettingsPage /></RequireApproved>} />
                 <Route path="/verification" element={<VerificationPage />} />
                 <Route path="/admin" element={
                   <AdminRoute>

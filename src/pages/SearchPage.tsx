@@ -105,6 +105,10 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
         .eq('role', type)
         .eq('is_banned', false);
 
+      if (type === 'talent') {
+        q = q.eq('verification_status', 'verified');
+      }
+
       if (selectedGenre !== 'すべて') {
         q = q.contains('genres', [selectedGenre]);
       }

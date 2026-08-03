@@ -205,7 +205,7 @@ export const SignupPage: React.FC = () => {
       role: resolvedType,
       birth_date: isTalent ? birthDate : undefined,
       is_minor: isMinor,
-      verification_status: (resolvedType === 'agency' || resolvedType === 'casting') ? 'reviewing' : 'none'
+      verification_status: 'reviewing'
     };
 
     if (isCasting) {

@@ -51,11 +51,9 @@ const VerificationPage: React.FC = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('verification-docs')
-        .getPublicUrl(filePath);
-
-      setFormData({ ...formData, docUrl: publicUrl });
+      // verification-docs is a private bucket, so we store the storage path
+      // (not a public URL) and mint a short-lived signed URL when it's viewed.
+      setFormData({ ...formData, docUrl: filePath });
       alert(t('mypage.upload_success'));
     } catch (error: any) {
       alert('Upload Error: ' + error.message);

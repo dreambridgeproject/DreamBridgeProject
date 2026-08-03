@@ -119,6 +119,19 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleViewDoc = async (docPath?: string) => {
+    if (!docPath) return;
+    const { data, error } = await supabase.storage
+      .from('verification-docs')
+      .createSignedUrl(docPath, 60);
+
+    if (error || !data) {
+      alert(t('admin.update_fail'));
+      return;
+    }
+    window.open(data.signedUrl, '_blank', 'noreferrer');
+  };
+
   const handleUpdateSkillStatus = async (id: string, status: 'approved' | 'rejected') => {
     const { error } = await supabase
       .from('profiles')
@@ -304,14 +317,13 @@ const AdminDashboard: React.FC = () => {
                         </div>
                       ) : (
                         <>
-                          <a 
-                            href={(item as any).verification_doc_url} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            style={{ color: 'var(--accent)', textDecoration: 'underline', display: 'block', marginBottom: '0.25rem' }}
+                          <button
+                            onClick={() => handleViewDoc((item as any).verification_doc_url)}
+                            disabled={!(item as any).verification_doc_url}
+                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--accent)', textDecoration: 'underline', display: 'block', marginBottom: '0.25rem', fontSize: 'inherit' }}
                           >
                             {t('admin.view_doc')}
-                          </a>
+                          </button>
                           {(item as any).parental_consent_name && (
                             <div style={{ fontSize: '0.75rem', backgroundColor: 'rgba(212, 175, 55, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
                               <div>{t('admin.parent')}: {(item as any).parental_consent_name}</div>

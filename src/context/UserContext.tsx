@@ -152,7 +152,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
           videos: [],
           audios: [],
           plan: 'free',
-          verification_status: (role === 'agency' || role === 'casting') ? 'reviewing' : 'none',
+          verification_status: 'reviewing',
           blocked_user_ids: [],
           company_description: metadata?.company_description || '',
           contact_info: metadata?.contact_info || '',
