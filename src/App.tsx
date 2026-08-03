@@ -25,6 +25,7 @@ import AttendanceResponsePage from './pages/AttendanceResponsePage';
 import JobDetailPage from './pages/JobDetailPage';
 import QuickAccessPopup from './components/QuickAccessPopup';
 import { type ReactNode } from 'react';
+import { isAdminEmail } from './lib/admin';
 
 // Admin Route Protection
 const AdminRoute = ({ children }: { children: ReactNode }) => {
@@ -32,9 +33,7 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
 
   if (loading) return null;
 
-  const isAdmin = user?.email === 'admin@dreambridge.jp' || user?.email?.includes('admin@');
-
-  if (!isAdmin) {
+  if (!isAdminEmail(user?.email)) {
     return <Navigate to="/" replace />;
   }
 
@@ -54,9 +53,7 @@ const RequireApproved = ({ children }: { children: ReactNode }) => {
     return <Navigate to="/" replace />;
   }
 
-  const isAdmin = user.email === 'admin@dreambridge.jp' || user.email?.includes('admin@');
-
-  if (!isAdmin && currentUser?.verification_status !== 'verified') {
+  if (!isAdminEmail(user.email) && currentUser?.verification_status !== 'verified') {
     return <Navigate to="/verification" replace />;
   }
 

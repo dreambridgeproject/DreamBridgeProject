@@ -218,8 +218,7 @@ USING (
     bucket_id = 'verification-docs'
     AND (
         (storage.foldername(name))[1] = auth.uid()::text
-        OR (auth.jwt() ->> 'email') = 'admin@dreambridge.jp'
-        OR (auth.jwt() ->> 'email') LIKE '%admin@%'
+        OR (auth.jwt() ->> 'email') IN ('admin@dreambridge.jp', 'gengen718008+admin@gmail.com')
     )
 );
 
@@ -248,6 +247,18 @@ CREATE POLICY "Role-based profile visibility" ON public.profiles FOR SELECT USIN
 );
 CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+-- Admins (exact-email allowlist, not a substring match — see src/lib/admin.ts)
+-- need to see and update every profile to run verification/ban review from
+-- AdminDashboard. Additive policies: Postgres ORs multiple permissive
+-- policies for the same command, so these don't replace the ones above.
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
+CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT
+USING ((auth.jwt() ->> 'email') IN ('admin@dreambridge.jp', 'gengen718008+admin@gmail.com'));
+
+DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
+CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE
+USING ((auth.jwt() ->> 'email') IN ('admin@dreambridge.jp', 'gengen718008+admin@gmail.com'));
 
 -- Offers: Involved parties can view
 CREATE POLICY "Users can view offers they are part of" ON public.offers FOR SELECT 
