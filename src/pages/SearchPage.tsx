@@ -103,7 +103,9 @@ const SearchPage: React.FC<SearchPageProps> = ({ type }) => {
         .from('profiles')
         .select('*')
         .eq('role', type)
-        .eq('is_banned', false);
+        .eq('is_banned', false)
+        .not('full_name', 'is', null)
+        .neq('full_name', '');
 
       if (type === 'talent') {
         q = q.eq('verification_status', 'verified');

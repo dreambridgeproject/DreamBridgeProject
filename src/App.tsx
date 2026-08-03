@@ -54,7 +54,9 @@ const RequireApproved = ({ children }: { children: ReactNode }) => {
     return <Navigate to="/" replace />;
   }
 
-  if (currentUser?.verification_status !== 'verified') {
+  const isAdmin = user.email === 'admin@dreambridge.jp' || user.email?.includes('admin@');
+
+  if (!isAdmin && currentUser?.verification_status !== 'verified') {
     return <Navigate to="/verification" replace />;
   }
 
