@@ -67,14 +67,19 @@ const VerificationPage: React.FC = () => {
     try {
       const updates: any = {
         verification_status: 'reviewing',
-        verification_doc_url: formData.docUrl,
-        birth_date: formData.birthDate,
-        age: age
+        verification_doc_url: formData.docUrl
       };
 
-      if (isTalent && isMinor) {
-        updates.parental_consent_name = formData.parentName;
-        updates.parental_consent_contact = formData.parentContact;
+      if (isTalent) {
+        updates.birth_date = formData.birthDate;
+        updates.age = age;
+        if (isMinor) {
+          updates.parental_consent_name = formData.parentName;
+          updates.parental_consent_contact = formData.parentContact;
+        }
+      } else {
+        updates.corporate_id = formData.corporateId;
+        updates.corporate_site = formData.corporateSite;
       }
 
       await updateProfile(updates);

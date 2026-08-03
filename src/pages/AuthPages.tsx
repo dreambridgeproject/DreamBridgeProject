@@ -204,8 +204,10 @@ export const SignupPage: React.FC = () => {
     const signupData: any = {
       role: resolvedType,
       birth_date: isTalent ? birthDate : undefined,
-      is_minor: isMinor,
-      verification_status: 'reviewing'
+      is_minor: isMinor
+      // verification_status is left unset (DB default 'none') — it only
+      // becomes 'reviewing' once the /verification form is actually
+      // submitted, so the admin pending list has something to review.
     };
 
     if (isCasting) {

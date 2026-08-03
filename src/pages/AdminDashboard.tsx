@@ -308,15 +308,23 @@ const AdminDashboard: React.FC = () => {
                       <div style={{ fontSize: '0.875rem' }}>{(item as any).representative_name || (item.age ? item.age + t('mypage.age') : '')}</div>
                     </td>
                     <td style={tdStyle}>
-                      {item.role === 'casting' ? (
-                        <div style={{ fontSize: '0.8rem', maxWidth: '300px' }}>
+                      {item.role === 'casting' && (
+                        <div style={{ fontSize: '0.8rem', maxWidth: '300px', marginBottom: '0.5rem' }}>
                           <div style={{ fontWeight: 600 }}>{t('admin.biz_content')}:</div>
                           <div style={{ marginBottom: '0.25rem' }}>{item.company_description}</div>
                           <div style={{ fontWeight: 600 }}>{t('admin.contact')}:</div>
                           <div>{item.contact_info}</div>
                         </div>
-                      ) : (
-                        <>
+                      )}
+                      {item.role !== 'talent' && (
+                        <div style={{ fontSize: '0.8rem', maxWidth: '300px', marginBottom: '0.5rem' }}>
+                          <div style={{ fontWeight: 600 }}>{t('verify.corporate_id')}:</div>
+                          <div style={{ marginBottom: '0.25rem' }}>{(item as any).corporate_id || '-'}</div>
+                          <div style={{ fontWeight: 600 }}>{t('verify.corporate_site')}:</div>
+                          <div>{(item as any).corporate_site || '-'}</div>
+                        </div>
+                      )}
+                      <>
                           <button
                             onClick={() => handleViewDoc((item as any).verification_doc_url)}
                             disabled={!(item as any).verification_doc_url}
@@ -331,7 +339,6 @@ const AdminDashboard: React.FC = () => {
                             </div>
                           )}
                         </>
-                      )}
                     </td>
                     <td style={tdStyle}>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>

@@ -152,7 +152,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
           videos: [],
           audios: [],
           plan: 'free',
-          verification_status: 'reviewing',
+          // Left unset (DB default 'none') — see AuthPages.tsx signup for why.
           blocked_user_ids: [],
           company_description: metadata?.company_description || '',
           contact_info: metadata?.contact_info || '',

@@ -39,6 +39,8 @@ export interface Profile {
   verification_status: 'none' | 'reviewing' | 'verified' | 'rejected';
   skill_review_status?: 'none' | 'reviewing' | 'approved' | 'rejected';
   verification_doc_url?: string;
+  corporate_id?: string;
+  corporate_site?: string;
   parental_consent_name?: string;
   parental_consent_contact?: string;
   blocked_user_ids: string[];

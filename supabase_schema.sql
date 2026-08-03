@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     plan TEXT DEFAULT 'free',
     verification_status TEXT DEFAULT 'none', -- none, reviewing, verified, rejected
     verification_doc_url TEXT,
+    corporate_id TEXT, -- agency/casting verification: 法人番号
+    corporate_site TEXT, -- agency/casting verification: 企業サイトURL
     skill_review_status TEXT DEFAULT 'none', -- none, reviewing, approved, rejected
     boosted_until TIMESTAMP WITH TIME ZONE, -- paid PR exposure window; independent of verification/skill review, never affects sort order
     parental_consent_name TEXT,
